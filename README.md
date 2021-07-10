@@ -1,5 +1,5 @@
 # Steam_watcher
-这是 [prcbot/yobot](https://github.com/pcrbot/yobot) 的自定义插件
+这是 [prcbot/yobot](https://github.com/pcrbot/yobot) 的自定义插件，用于Steam相关内容的自动播报和手动查询
 
 ## 使用方法
 
@@ -16,7 +16,7 @@ pip3 install -r requirements.txt --user
 # 国内可加上参数 -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-然后将 Steam_watcher 导入 yobot ，请看[这个例子](https://github.com/SonodaHanami/yobot/commit/a64af42dd43cd25ad04b4aabc91d06ad95a16aba)
+然后将 Steam_watcher 导入 yobot ，请看[这个例子](https://github.com/SonodaHanami/yobot/commit/80b5857ca722cf6221b40b369ac3375059b8b0b6)
 
 启动 yobot ，第一次启动 Steam_watcher 后会在 Steam_watcher 文件夹下自动生成 config.json，修改它
 ```json
