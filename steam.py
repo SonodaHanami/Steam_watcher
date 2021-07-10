@@ -408,27 +408,33 @@ class Steam:
         return news
 
     def init_fonts(self):
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '正在初始化字体资源')
         if os.path.exists(os.path.expanduser('~/.Steam_watcher/fonts/MSYH.TTC')):
             return
-        print('正在初始化字体')
         try:
             with open(os.path.expanduser('~/.Steam_watcher/fonts/MSYH.TTC'), 'wb') as f:
                 f.write(requests.get('https://github.com/SonodaHanami/kusa/raw/docs/MSYH.TTC').content)
-            print('字体下载完成')
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体下载完成')
         except Exception as e:
-            print(f'字体下载失败 {e}')
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'字体下载失败 {e}')
 
     def init_images(self):
-        print('正在初始化图片资源')
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '正在初始化图片资源')
+        downloaded = 0
         try:
             urls = requests.get('https://github.com/SonodaHanami/kusa/raw/docs/DOTA2_image_urls.txt').text.split('\n')
             for url in urls:
                 if not os.path.exists(os.path.join(IMAGES, os.path.basename(url))):
                     with open(os.path.join(IMAGES, os.path.basename(url)), 'wb') as f:
                         f.write(requests.get(url).content)
-            print('图片资源下载完成')
+                        downloaded += 1
+            if downloaded:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'图片资源下载完成')
         except Exception as e:
-            print(f'图片资源下载失败 {e}')
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'图片资源下载失败 {e}')
+        finally:
+            if downloaded:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'成功下载了{downloaded}张图片')
 
     def get_players(self):
         steamdata  = loadjson(STEAM)
