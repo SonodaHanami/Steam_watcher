@@ -1,0 +1,2 @@
+pillow
+pygtrie==2.4.2
