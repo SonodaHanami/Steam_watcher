@@ -44,6 +44,8 @@ class Steam:
     Request = False
 
     def __init__(self, **kwargs):
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam 开始！')
+
         self.api = kwargs['bot_api']
         self.whois = whois.Whois(**kwargs)
         self.dota2 = Dota2()
@@ -55,7 +57,7 @@ class Steam:
         if not os.path.exists(STEAM):
             dumpjson(DEFAULT_DATA, STEAM)
 
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam，MINUTE={}'.format(self.MINUTE))
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam 完成！MINUTE={}'.format(self.MINUTE))
 
 
     async def execute_async(self, func_num, message):
@@ -408,33 +410,69 @@ class Steam:
         return news
 
     def init_fonts(self):
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '正在初始化字体资源')
-        if os.path.exists(os.path.expanduser('~/.Steam_watcher/fonts/MSYH.TTC')):
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化字体')
+        font_path = os.path.expanduser('~/.Steam_watcher/fonts/MSYH.TTC')
+        font_OK = False
+        try:
+            font = ImageFont.truetype(font_path, 12)
+            font_OK = True
+            if os.path.getsize(font_path) < 19647736:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体文件不完整')
+                font_OK = False
+        except Exception as e:
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'初始化字体失败', e)
+        if font_OK:
             return
         try:
-            with open(os.path.expanduser('~/.Steam_watcher/fonts/MSYH.TTC'), 'wb') as f:
-                f.write(requests.get('https://github.com/SonodaHanami/kusa/raw/docs/MSYH.TTC').content)
+            with open(font_path, 'wb') as f:
+                t0 = time.time()
+                for i in range(1, 193):
+                    n = f'{i:0>3}'
+                    per = i / 192 * 100
+                    t1 = (time.time() - t0) / i * (192 - i)
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'正在重新下载字体({per:.2f}%)，预计还需要{t1:.2f}秒', end='\r')
+                    f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/MSYH/x{n}').content)
+            print()
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体下载完成')
         except Exception as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'字体下载失败 {e}')
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体下载失败', e)
 
     def init_images(self):
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '正在初始化图片资源')
-        downloaded = 0
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化图片')
+        total, downloaded, successful, failed = 0, 0, 0, 0
+        images = []
         try:
-            urls = requests.get('https://github.com/SonodaHanami/kusa/raw/docs/DOTA2_image_urls.txt').text.split('\n')
-            for url in urls:
-                if not os.path.exists(os.path.join(IMAGES, os.path.basename(url))):
-                    with open(os.path.join(IMAGES, os.path.basename(url)), 'wb') as f:
-                        f.write(requests.get(url).content)
-                        downloaded += 1
-            if downloaded:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'图片资源下载完成')
+            images = requests.get('https://yubo65536.gitee.io/manager/assets/DOTA2_images.list').text.split('\n')
+            total = len(images)
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'加载图片列表成功，共有{total}条图片记录')
         except Exception as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'图片资源下载失败 {e}')
-        finally:
-            if downloaded:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'成功下载了{downloaded}张图片')
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '加载图片列表失败', e)
+            return
+        if not images:
+            return
+        for img in images:
+            img_OK = False
+            img_path = os.path.join(IMAGES, img)
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化图片({}/{})'.format(downloaded + successful + failed + 1, total), end='\r')
+            try:
+                cur_img = Image.open(img_path).verify()
+                img_OK = True
+                successful += 1
+            except Exception as e:
+                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'读取图片{img}失败', e)
+                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'开始重新下载{img}')
+                pass
+            if img_OK:
+                continue
+            try:
+                with open(img_path, 'wb') as f:
+                    f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/images/{img}').content)
+                    downloaded += 1
+            except Exception as e:
+                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'下载{img}失败', e)
+                failed += 1
+        print()
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'从本地读取{successful}，重新下载{downloaded}，读取/下载失败{failed}')
 
     def get_players(self):
         steamdata  = loadjson(STEAM)
