@@ -71,6 +71,9 @@ class Steam:
         if whois_reply:
             return whois_reply
 
+        if 'steam' in msg.lower() and ('help' in msg.lower() or '帮助' in msg or '说明书' in msg):
+            return 'https://docs.qq.com/sheet/DWGFiTVpPS0lkZ2Vv'
+
         if msg.lower() == '订阅steam':
             steamdata = loadjson(STEAM)
             if group in steamdata['subscribe_groups']:
