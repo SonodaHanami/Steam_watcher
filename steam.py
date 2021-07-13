@@ -868,7 +868,7 @@ class Dota2:
                             break
                 lane = '未知分路'
                 if p.get('lane_role'):
-                    lane = ['优势路', '中路', '劣势路'][p['lane_role'] - 1]
+                    lane = ['优势路', '中路', '劣势路', '打野'][p['lane_role'] - 1]
                 draw.text((118, 181 + slot * 60 + idx * 65), '{} {}'.format(pick, lane), font=font, fill=(0, 0, 0))
                 rank = p.get('rank_tier') if p.get('rank_tier') else 0
                 rank, star = rank // 10, rank % 10
