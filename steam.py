@@ -651,9 +651,9 @@ class Dota2:
         )
         title_size = font.getsize(title)
         match['players'][idx]['title_position'][0] += title_size[0] + 1
-        if match['players'][idx]['title_position'][0] > 195:
-            match['players'][idx]['title_position'][0] = 115
-            match['players'][idx]['title_position'][1] += 14
+        # if match['players'][idx]['title_position'][0] > 195:
+        #     match['players'][idx]['title_position'][0] = 10
+        #     match['players'][idx]['title_position'][1] += 14
 
 
     def generate_match_message(self, match_id):
@@ -860,18 +860,16 @@ class Dota2:
                 level = str(p['level'])
                 level_size = font.getsize(level)
                 draw.text((67 - level_size[0], 187 + slot * 60 + idx * 65), level, font=font, fill=(255, 255, 255))
-                pick = ''
+                pick = '第?手'
                 if match.get('picks_bans'):
                     for bp in match.get('picks_bans'):
                         if bp['hero_id'] == p['hero_id']:
                             pick = '第{}手'.format(bp['order'] + 1)
                             break
-                    else:
-                        pick = '随机'
-                lane = ''
+                lane = '未知分路'
                 if p.get('lane_role'):
                     lane = ['优势路', '中路', '劣势路'][p['lane_role'] - 1]
-                draw.text((10, 209 + slot * 60 + idx * 65), '{} {}'.format(pick, lane), font=font, fill=(0, 0, 0))
+                draw.text((118, 181 + slot * 60 + idx * 65), '{} {}'.format(pick, lane), font=font, fill=(0, 0, 0))
                 rank = p.get('rank_tier') if p.get('rank_tier') else 0
                 rank, star = rank // 10, rank % 10
                 rank_img = self.get_image(f'rank_icon_{rank}.png')
@@ -881,22 +879,22 @@ class Dota2:
                 rank_img = Image.alpha_composite(Image.new('RGBA', rank_img.size, (255, 255, 255)), rank_img)
                 rank_img = rank_img.convert('RGB')
                 rank_img = rank_img.resize((45, 45), Image.ANTIALIAS)
-                image.paste(rank_img, (70, 164 + slot * 60 + idx * 65))
+                image.paste(rank_img, (71, 164 + slot * 60 + idx * 65))
                 rank = '[{}{}] '.format(PLAYER_RANK[rank], star if star else '')
                 rank_size = font.getsize(rank)
-                draw.text((115, 167 + slot * 60 + idx * 65), rank, font=font, fill=(128, 128, 128))
+                draw.text((118, 167 + slot * 60 + idx * 65), rank, font=font, fill=(128, 128, 128))
                 pname = p.get('personaname') if p.get('personaname') else '匿名玩家'
                 pname_size = font.getsize(pname)
                 while rank_size[0] + pname_size[0] > 240:
                     pname = pname[:-2] + '…'
                     pname_size = font.getsize(pname)
-                draw.text((115 + rank_size[0], 167 + slot * 60 + idx * 65), pname, font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
+                draw.text((118 + rank_size[0], 167 + slot * 60 + idx * 65), pname, font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
                 net = '{:,}'.format(p['net_worth'])
                 net_size = font.getsize(net)
                 damage_to_net = '({:.2f})'.format(p['hero_damage'] / p['net_worth'] if p['net_worth'] else 0)
-                draw.text((116, 182 + slot * 60 + idx * 65), net, font=font, fill=(0, 0, 0))
-                draw.text((115, 181 + slot * 60 + idx * 65), net, font=font, fill=(255, 255, 0))
-                draw.text((119 + net_size[0], 181 + slot * 60 + idx * 65), damage_to_net, font=font, fill=(0, 0, 0))
+                draw.text((119, 196 + slot * 60 + idx * 65), net, font=font, fill=(0, 0, 0))
+                draw.text((118, 195 + slot * 60 + idx * 65), net, font=font, fill=(255, 255, 0))
+                draw.text((122 + net_size[0], 195 + slot * 60 + idx * 65), damage_to_net, font=font, fill=(0, 0, 0))
 
                 draw.text((215, 209 + slot * 60 + idx * 65), '建筑伤害: {:,}'.format(p['tower_damage']), font=font, fill=(0, 0, 0))
                 kda = '{}/{}/{} ({:.2f})'.format(
@@ -907,7 +905,7 @@ class Dota2:
                 draw.text((375, 195 + slot * 60 + idx * 65), '控制时间: {:.2f}s'.format(p['stuns']), font=font, fill=(0, 0, 0))
                 draw.text((375, 209 + slot * 60 + idx * 65), '治疗量: {:,}'.format(p['hero_healing']), font=font, fill=(0, 0, 0))
 
-                p['title_position'] = [115, 195 + slot * 60 + idx * 65]
+                p['title_position'] = [10, 209 + slot * 60 + idx * 65]
                 mvp_point = p['kills'] * 5 + p['assists'] * 3 + p['stuns'] * 0.5 + p['hero_damage'] * 0.001 + p['tower_damage'] * 0.002 + p['hero_healing'] * 0.002
                 if mvp_point > max_mvp_point[1]:
                     max_mvp_point = [idx, mvp_point]
