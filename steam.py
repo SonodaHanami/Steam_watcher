@@ -640,6 +640,8 @@ class Dota2:
             player['item_usage'] = {}
         if not player.get('item_uses'):
             player['item_uses'] = {}
+        if not player.get('lane_role'):
+            player['lane_role'] = 0
 
     def draw_title(self, match, draw, font, item, title, color):
         idx = item[0]
@@ -858,6 +860,18 @@ class Dota2:
                 level = str(p['level'])
                 level_size = font.getsize(level)
                 draw.text((67 - level_size[0], 187 + slot * 60 + idx * 65), level, font=font, fill=(255, 255, 255))
+                pick = ''
+                if match.get('picks_bans'):
+                    for bp in match.get('picks_bans'):
+                        if bp['hero_id'] == p['hero_id']:
+                            pick = '第{}手'.format(bp['order'] + 1)
+                            break
+                    else:
+                        pick = '随机'
+                lane = ''
+                if p.get('lane_role'):
+                    lane = ['优势路', '中路', '劣势路'][p['lane_role'] - 1]
+                draw.text((10, 209 + slot * 60 + idx * 65), '{} {}'.format(pick, lane), font=font, fill=(0, 0, 0))
                 rank = p.get('rank_tier') if p.get('rank_tier') else 0
                 rank, star = rank // 10, rank % 10
                 rank_img = self.get_image(f'rank_icon_{rank}.png')
