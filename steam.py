@@ -100,6 +100,10 @@ class Steam:
                 if prm[1]:
                     return usage
                 id3 = int(prm[2])
+                await self.api.send_group_msg(
+                    group_id=message['group_id'],
+                    message=f'正在尝试绑定并初始化玩家信息',
+                )
                 if id3 > 76561197960265728:
                     id3 -= 76561197960265728
                 id64 = id3 + 76561197960265728
@@ -108,6 +112,8 @@ class Steam:
                 # 之前已经绑定过
                 if steamdata['subscribers'].get(user):
                     old_id3 = steamdata['subscribers'][user]
+                    if id3 == old_id3:
+                        success = f'你已绑定{old_id3}'
                     if old_id3 != id3:
                         steamdata['players'][old_id3]['subscribers'].remove(user)
                         if not steamdata['players'][old_id3]['subscribers']:
@@ -118,14 +124,44 @@ class Steam:
                     steamdata['players'][id3]['subscribers'].append(user)
                     steamdata['players'][id3]['subscribers'] = list(set(steamdata['players'][id3]['subscribers']))
                 else:
+                    now = int(datetime.now().timestamp())
+                    gameextrainfo = ''
+                    match_id, start_time, action, rank = 0, 0, 0, 0
+                    try:
+                        j = requests.get(PLAYER_SUMMARY.format(APIKEY, id64)).json()
+                        p = j['response']['players'][0]
+                        if p.get('gameextrainfo'):
+                            gameextrainfo = p['gameextrainfo']
+                            s1 = p['personaname'] + '现在正在玩' + p['gameextrainfo']
+                        else:
+                            gameextrainfo = ''
+                            s1 = p['personaname'] + '现在没在玩游戏'
+                        match_id, start_time = self.dota2.get_last_match(id64)
+                        if match_id and start_time:
+                            s2 = '最近一场Dota 2比赛编号为{}，开始于{}'.format(
+                                match_id,
+                                time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))
+                            )
+                        else:
+                            s2 = '没有查询到最近的Dota 2比赛'
+                        name, rank = self.dota2.get_rank_tier(id3)
+                        if rank:
+                            s3 = '现在是{}{}'.format(PLAYER_RANK[rank // 10], rank % 10 or '')
+                        else:
+                            s3 = '没有查询到天梯段位'
+                        action = max(start_time, now if gameextrainfo == 'Dota 2' else 0)
+                        success += '\n{}，{}，{}'.format(s1, s2, s3)
+                    except Exception as e:
+                        success += '\n初始化玩家信息失败'
+                        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化玩家信息失败', e)
                     steamdata['players'][id3] = {
                         'steam_id64': id64,
                         'subscribers': [user],
-                        'gameextrainfo': '',
-                        'last_change': 0,
-                        'last_DOTA2_action': 0,
-                        'last_DOTA2_match_id': 0,
-                        'DOTA2_rank_tier': 0,
+                        'gameextrainfo': gameextrainfo,
+                        'last_change': now,
+                        'last_DOTA2_action': action,
+                        'last_DOTA2_match_id': match_id,
+                        'DOTA2_rank_tier': rank,
                     }
                 dumpjson(steamdata, STEAM)
                 return success.format(id3)
@@ -175,9 +211,9 @@ class Steam:
             j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids)).json()
             for p in j['response']['players']:
                 if p.get('gameextrainfo'):
-                    replys.append(p['personaname'] + '正在玩' + p['gameextrainfo'])
+                    replys.append(p['personaname'] + '现在正在玩' + p['gameextrainfo'])
                 elif is_solo:
-                    replys.append(p['personaname'] + '没在玩游戏')
+                    replys.append(p['personaname'] + '现在没在玩游戏')
             if replys:
                 if len(replys) > 2:
                     replys.append('大家都有光明的未来！')
