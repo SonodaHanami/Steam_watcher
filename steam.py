@@ -393,7 +393,7 @@ class Steam:
             if new_match:
                 match_id = str(match_id)
                 player = {
-                    'nickname': pname,
+                    'personaname': pname,
                     'steam_id3' : int(id3),
                 }
                 if steamdata['DOTA2_matches_pool'].get(match_id, 0) != 0:
@@ -567,6 +567,12 @@ class Dota2:
                 # 活动模式
                 print('{} 比赛编号 {} 活动模式，跳过分析'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
                 match['incomplete'] = True
+                if match_id in steamdata['DOTA2_matches_pool']:
+                    for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
+                        for pm in match['players']:
+                            if pp['steam_id3'] == pm['account_id']:
+                                pm['personaname'] = pp['personaname']
+                                break
                 dumpjson(match, MATCH)
                 return match
             received = match['players'][0]['damage_inflictor_received']
@@ -614,6 +620,12 @@ class Dota2:
         else:
             # 比赛分析结果完整了
             print('{} 比赛编号 {} 从OPENDOTA获取到分析结果'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+            if match_id in steamdata['DOTA2_matches_pool']:
+                for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
+                    for pm in match['players']:
+                        if pp['steam_id3'] == pm['account_id']:
+                            pm['personaname'] = pp['personaname']
+                            break
             dumpjson(match, MATCH)
             return match
 
@@ -690,10 +702,10 @@ class Dota2:
                     i['gpm'] = j['gold_per_min']
                     i['xpm'] = j['xp_per_min']
                     break
-        nicknames = '，'.join([players[i]['nickname'] for i in range(-len(players),-1)])
-        if nicknames:
-            nicknames += '和'
-        nicknames += players[-1]['nickname']
+        personanames = '，'.join([players[i]['personaname'] for i in range(-len(players),-1)])
+        if personanames:
+            personanames += '和'
+        personanames += players[-1]['personaname']
 
         # 队伍信息
         team = players[0]['dota2_team']
@@ -724,20 +736,20 @@ class Dota2:
 
         tosend = []
         if win and postive:
-            tosend.append(random.choice(WIN_POSTIVE).format(nicknames))
+            tosend.append(random.choice(WIN_POSTIVE).format(personanames))
         elif win and not postive:
-            tosend.append(random.choice(WIN_NEGATIVE).format(nicknames))
+            tosend.append(random.choice(WIN_NEGATIVE).format(personanames))
         elif not win and postive:
-            tosend.append(random.choice(LOSE_POSTIVE).format(nicknames))
+            tosend.append(random.choice(LOSE_POSTIVE).format(personanames))
         else:
-            tosend.append(random.choice(LOSE_NEGATIVE).format(nicknames))
+            tosend.append(random.choice(LOSE_NEGATIVE).format(personanames))
 
         tosend.append('开始时间: {}'.format(start_time))
         tosend.append('持续时间: {:.0f}分{:.0f}秒'.format(duration / 60, duration % 60))
         tosend.append('游戏模式: [{}/{}]'.format(mode, lobby))
 
         for i in players:
-            nickname = i['nickname']
+            personaname = i['personaname']
             hero = random.choice(HEROES_CHINESE[i['hero']]) if i['hero'] in HEROES_CHINESE else '不知道什么鬼'
             kda = i['kda']
             last_hits = i['last_hit']
@@ -753,7 +765,7 @@ class Dota2:
                 '{}使用{}, KDA: {:.2f}[{}/{}/{}], GPM/XPM: {}/{}, ' \
                 '补刀数: {}, 总伤害: {}({:.2f}%), ' \
                 '参战率: {:.2f}%, 参葬率: {:.2f}%' \
-                .format(nickname, hero, kda, kills, deaths, assists, gpm, xpm, last_hits,
+                .format(personaname, hero, kda, kills, deaths, assists, gpm, xpm, last_hits,
                         damage, damage_rate,
                         participation, deaths_rate)
             )
