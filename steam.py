@@ -391,6 +391,7 @@ class Steam:
                 steamdata['players'][id3]['last_DOTA2_action'] = max(start_time, steamdata['players'][id3]['last_DOTA2_action'])
                 steamdata['players'][id3]['last_DOTA2_match_id'] = match_id
             if new_match:
+                match_id = str(match_id)
                 player = {
                     'nickname': pname,
                     'steam_id3' : int(id3),
