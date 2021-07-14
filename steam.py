@@ -906,7 +906,7 @@ class Dota2:
                 draw.text((375, 209 + slot * 60 + idx * 65), '治疗量: {:,}'.format(p['hero_healing']), font=font, fill=(0, 0, 0))
 
                 p['title_position'] = [10, 209 + slot * 60 + idx * 65]
-                mvp_point = p['kills'] * 5 + p['assists'] * 3 + p['stuns'] * 0.5 + p['hero_damage'] * 0.001 + p['tower_damage'] * 0.002 + p['hero_healing'] * 0.002
+                mvp_point = p['kills'] * 5 + p['assists'] * 3 + p['stuns'] * 0.5 + p['hero_damage'] * 0.001 + p['tower_damage'] * 0.01 + p['hero_healing'] * 0.002
                 if mvp_point > max_mvp_point[1]:
                     max_mvp_point = [idx, mvp_point]
                 if p['net_worth'] > max_net[1]:
