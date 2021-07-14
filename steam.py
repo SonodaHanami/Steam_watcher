@@ -128,7 +128,12 @@ class Steam:
                     gameextrainfo = ''
                     match_id, start_time, action, rank = 0, 0, 0, 0
                     try:
-                        j = requests.get(PLAYER_SUMMARY.format(APIKEY, id64)).json()
+                        try:
+                            j = requests.get(PLAYER_SUMMARY.format(APIKEY, id64), timeout=10).json()
+                        except requests.exceptions.RequestException as e:
+                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+                            success += '\nkale'
+                            raise
                         p = j['response']['players'][0]
                         if p.get('gameextrainfo'):
                             gameextrainfo = p['gameextrainfo']
@@ -208,7 +213,11 @@ class Steam:
                         return f'我们群里有{name}吗？'
                     return f'{IDK}，因为{name}还没有绑定SteamID'
             replys = []
-            j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids)).json()
+            try:
+                j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids), timeout=10).json()
+            except requests.exceptions.RequestException as e:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+                return 'kale，请稍后再试'
             for p in j['response']['players']:
                 if p.get('gameextrainfo'):
                     replys.append(p['personaname'] + '现在正在玩' + p['gameextrainfo'])
@@ -344,7 +353,11 @@ class Steam:
             sids = '0'
         now = int(datetime.now().timestamp())
         # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'Steam雷达开始扫描')
-        j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids)).json()
+        try:
+            j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids), timeout=10).json()
+        except requests.exceptions.RequestException as e:
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+            j = {'response': {'players': []}}
         for p in j['response']['players']:
             id64 = int(p['steamid'])
             id3 = str(id64 - 76561197960265728)
@@ -526,8 +539,11 @@ class Dota2:
     @staticmethod
     def get_last_match(id64):
         try:
-            match = requests.get(LAST_MATCH.format(APIKEY, id64)).json()['result']['matches'][0]
+            match = requests.get(LAST_MATCH.format(APIKEY, id64), timeout=10).json()['result']['matches'][0]
             return match['match_id'], match['start_time']
+        except requests.exceptions.RequestException as e:
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+            return 0, 0
         except Exception as e:
             return 0, 0
 
@@ -559,7 +575,11 @@ class Dota2:
                     print('{} 比赛编号 {} 重试次数过多，跳过分析'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
                     if not match.get('players'):
                         print('{} 比赛编号 {} 从OPENDOTA获取不到分析结果，使用Value的API'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
-                        match = requests.get(MATCH_DETAILS.format(APIKEY, match_id)).json()['result']
+                        try:
+                            match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
+                        except requests.exceptions.RequestException as e:
+                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+                            raise
                     match['incomplete'] = True
                     dumpjson(match, MATCH)
                     return match
