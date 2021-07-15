@@ -442,9 +442,9 @@ class Steam:
                             'message': mt,
                             'user'   : players[id64]
                         })
+                        steamdata['players'][id3]['DOTA2_rank_tier'] = cur_rank
                     else:
                         pass
-                    steamdata['players'][id3]['DOTA2_rank_tier'] = cur_rank
 
         dumpjson(steamdata, STEAM)
 
