@@ -845,13 +845,10 @@ class Dota2:
         draw.text((460, 81), str(match['dire_score']), font=font2, fill=DIRE_RED)
         draw.text((461, 81), str(match['dire_score']), font=font2, fill=DIRE_RED)
         draw.rectangle((0, 120, 800, 122), RADIANT_GREEN)
-        draw.rectangle((0, 122, 120, 162), RADIANT_GREEN)
-        draw.polygon([(120, 122), (160, 122), (120, 162)], RADIANT_GREEN)
         draw.rectangle((0, 505, 800, 507), DIRE_RED)
-        draw.rectangle((0, 507, 120, 547), DIRE_RED)
-        draw.polygon([(120, 507), (160, 507), (120, 547)], DIRE_RED)
-        draw.text((80, 513 - 385 * int(match['radiant_win'])), '胜利', font=font2, fill=(255, 255, 255))
-        draw.text((80, 128 + 385 * int(match['radiant_win'])), '失败', font=font2, fill=(255, 255, 255))
+        image.paste(self.get_image('radiant_logo.png').resize((32, 32), Image.ANTIALIAS), (10, 125))
+        image.paste(self.get_image('dire_logo.png').resize((32, 32), Image.ANTIALIAS), (10, 510))
+        draw.text((100, 128 + 385 * winner), '胜利', font=font2, fill=[RADIANT_GREEN, DIRE_RED][winner])
         max_net = [0, 0]
         max_xpm = [0, 0]
         max_kills = [0, 0, 0]
@@ -872,8 +869,8 @@ class Dota2:
             team_gold = 0
             team_exp = 0
             max_mvp_point = [0, 0]
-            draw.text((20, 126 + slot * 385), SLOT[slot],         font=font, fill=(255, 255, 255))
-            draw.text((20, 140 + slot * 385), SLOT_CHINESE[slot], font=font, fill=(255, 255, 255))
+            draw.text((50, 126 + slot * 385), SLOT[slot],         font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
+            draw.text((50, 140 + slot * 385), SLOT_CHINESE[slot], font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
             for i in range(5):
                 idx = slot * 5 + i
                 p = match['players'][idx]
