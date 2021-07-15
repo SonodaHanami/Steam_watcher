@@ -915,6 +915,8 @@ class Dota2:
                         if bp['hero_id'] == p['hero_id']:
                             pick = '第{}手'.format(bp['order'] + 1)
                             break
+                if p.get('randomed'):
+                    pick = '随机'
                 lane = '未知分路'
                 if p.get('lane_role'):
                     lane = ['优势路', '中路', '劣势路', '打野'][p['lane_role'] - 1]
