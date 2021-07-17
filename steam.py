@@ -675,6 +675,8 @@ class Dota2:
             player['item_uses'] = {}
         if not player.get('lane_role'):
             player['lane_role'] = 0
+        if not player.get('permanent_buffs'):
+            player['permanent_buffs'] = {}
 
     def draw_title(self, match, draw, font, item, title, color):
         idx = item[0]
@@ -964,6 +966,8 @@ class Dota2:
                 if p['participation'] < min_participation[1] or (p['participation'] == min_participation[1] and p['hero_damage'] < min_participation[2]):
                     min_participation = [idx, p['participation'], p['hero_damage']]
 
+                scepter = 0
+                shard = 0
                 image.paste(Image.new('RGB', (252, 32), (192, 192, 192)), (474, 171 + slot * 60 + idx * 65))
                 p['purchase_log'].reverse()
                 for item in ITEM_SLOTS:
@@ -971,6 +975,8 @@ class Dota2:
                         item_img = Image.new('RGB', (40, 30), (128, 128, 128))
                     else:
                         item_img = self.get_image('{}_lg.png'.format(ITEMS[p[item]]))
+                    if p[item] == 108:
+                        scepter = 1
                     if item == 'item_neutral':
                         ima = item_img.convert('RGBA')
                         size = ima.size
@@ -1014,13 +1020,15 @@ class Dota2:
                                 '{:0>2}:{:0>2}'.format(purchase_time // 60, purchase_time % 60) if purchase_time > 0 else '-{}:{:0>2}'.format(-purchase_time // 60, -purchase_time % 60),
                                 font=font, fill=(192, 192, 192)
                             )
-
-                s = 1 if 'ultimate_scepter' in p['item_usage'] or 'ultimate_scepter_roshan' in p['item_uses'] else 0
-                scepter_img = self.get_image(f'scepter_{s}.png')
+                for buff in p['permanent_buffs']:
+                    if buff['permanent_buff'] == 2:
+                        scepter = 1
+                    if buff['permanent_buff'] == 12:
+                        shard = 1
+                scepter_img = self.get_image(f'scepter_{scepter}.png')
                 scepter_img = scepter_img.resize((20, 20), Image.ANTIALIAS)
                 image.paste(scepter_img, (770 , 170 + slot * 60 + idx * 65))
-                s = 1 if 'aghanims_shard' in p['item_usage'] or 'aghanims_shard_roshan' in p['item_uses'] else 0
-                shard_img = self.get_image(f'shard_{s}.png')
+                shard_img = self.get_image(f'shard_{shard}.png')
                 shard_img = shard_img.resize((20, 11), Image.ANTIALIAS)
                 image.paste(shard_img, (770 , 190 + slot * 60 + idx * 65))
 
