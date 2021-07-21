@@ -131,7 +131,7 @@ class Steam:
                         try:
                             j = requests.get(PLAYER_SUMMARY.format(APIKEY, id64), timeout=10).json()
                         except requests.exceptions.RequestException as e:
-                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale PLAYER_SUMMARY', e)
                             success += '\nkale'
                             raise
                         p = j['response']['players'][0]
@@ -216,7 +216,7 @@ class Steam:
             try:
                 j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids), timeout=10).json()
             except requests.exceptions.RequestException as e:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale PLAYER_SUMMARY', e)
                 return 'kale，请稍后再试'
             for p in j['response']['players']:
                 if p.get('gameextrainfo'):
@@ -288,7 +288,11 @@ class Steam:
                 if obj['uid'] == UNKNOWN:
                     return f'我们群里有{name}吗？'
                 return f'查不了，{name}可能还没有绑定SteamID'
-            j = requests.get(OPENDOTA_PLAYERS.format(id3) + '/heroes').json()
+            try:
+                j = requests.get(OPENDOTA_PLAYERS.format(id3) + '/heroes', timeout=10).json()
+            except requests.exceptions.RequestException as e:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_PLAYERS', e)
+                return 'kale，请稍后再试'
             if item == '常用英雄':
                 hero_stat = []
                 if j[0]['games'] == 0:
@@ -356,7 +360,7 @@ class Steam:
         try:
             j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids), timeout=10).json()
         except requests.exceptions.RequestException as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale PLAYER_SUMMARY', e)
             j = {'response': {'players': []}}
         for p in j['response']['players']:
             id64 = int(p['steamid'])
@@ -542,7 +546,7 @@ class Dota2:
             match = requests.get(LAST_MATCH.format(APIKEY, id64), timeout=10).json()['result']['matches'][0]
             return match['match_id'], match['start_time']
         except requests.exceptions.RequestException as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale LAST_MATCH', e)
             return 0, 0
         except Exception as e:
             return 0, 0
@@ -550,10 +554,13 @@ class Dota2:
     @staticmethod
     def get_rank_tier(id3):
         try:
-            j = requests.get(OPENDOTA_PLAYERS.format(id3)).json()
+            j = requests.get(OPENDOTA_PLAYERS.format(id3), timeout=10).json()
             name = j['profile']['personaname']
             rank = j.get('rank_tier') if j.get('rank_tier') else 0
             return name, rank
+        except requests.exceptions.RequestException as e:
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_PLAYERS', e)
+            return '', 0
         except Exception as e:
             return '', 0
 
@@ -569,7 +576,11 @@ class Dota2:
             return loadjson(MATCH)
         steamdata = loadjson(STEAM)
         try:
-            match = requests.get(OPENDOTA_MATCHES.format(match_id)).json()
+            try:
+                match = requests.get(OPENDOTA_MATCHES.format(match_id), timeout=10).json()
+            except requests.exceptions.RequestException as e:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_MATCHES', e)
+                raise
             if match_id in steamdata['DOTA2_matches_pool']:
                 if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
                     print('{} 比赛编号 {} 重试次数过多，跳过分析'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
@@ -578,7 +589,7 @@ class Dota2:
                         try:
                             match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
                         except requests.exceptions.RequestException as e:
-                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale', e)
+                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale MATCH_DETAILS', e)
                             raise
                     match['incomplete'] = True
                     dumpjson(match, MATCH)
@@ -611,7 +622,11 @@ class Dota2:
                 job_id = steamdata['DOTA2_matches_pool'][match_id].get('job_id')
             if job_id:
                 # 存在之前请求分析的job_id，则查询这个job是否已完成
-                j = requests.get(OPENDOTA_REQUEST.format(job_id)).json()
+                try:
+                    j = requests.get(OPENDOTA_REQUEST.format(job_id), timeout=10).json()
+                except requests.exceptions.RequestException as e:
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_REQUEST', e)
+                    return {}
                 if j:
                     # 查询返回了数据，说明job仍未完成
                     print('{} job_id {} 仍在处理中'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), job_id))
@@ -627,7 +642,11 @@ class Dota2:
                 if match_id in steamdata['DOTA2_matches_pool']:
                     steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] += 1
                     attempts = '（第{}次）'.format(steamdata['DOTA2_matches_pool'][match_id]['request_attempts'])
-                j = requests.post(OPENDOTA_REQUEST.format(match_id)).json()
+                try:
+                    j = requests.post(OPENDOTA_REQUEST.format(match_id), timeout=10).json()
+                except requests.exceptions.RequestException as e:
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_REQUEST', e)
+                    return {}
                 job_id = j['job']['jobId']
                 print('{} 比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(
                     datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
