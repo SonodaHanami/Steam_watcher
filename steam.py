@@ -488,7 +488,7 @@ class Steam:
                     per = i / 192 * 100
                     t1 = (time.time() - t0) / i * (192 - i)
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'正在重新下载字体({per:.2f}%)，预计还需要{t1:.2f}秒', end='\r')
-                    f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/MSYH/x{n}').content)
+                    f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/MSYH/x{n}', timeout=10).content)
             print()
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体下载完成')
         except Exception as e:
@@ -499,7 +499,7 @@ class Steam:
         total, downloaded, successful, failed = 0, 0, 0, 0
         images = []
         try:
-            images = requests.get('https://yubo65536.gitee.io/manager/assets/DOTA2_images.list').text.split('\n')
+            images = requests.get('https://yubo65536.gitee.io/manager/assets/DOTA2_images.list', timeout=10).text.split('\n')
             total = len(images)
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'加载图片列表成功，共有{total}条图片记录')
         except Exception as e:
@@ -523,7 +523,7 @@ class Steam:
                 continue
             try:
                 with open(img_path, 'wb') as f:
-                    f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/images/{img}').content)
+                    f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/images/{img}', timeout=10).content)
                     downloaded += 1
             except Exception as e:
                 # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'下载{img}失败', e)
