@@ -231,24 +231,48 @@ class Steam:
                 return '群友都没在玩游戏'
             return IDK
 
+        prm = re.match('查询(.+)的最近比赛$', msg)
+        if prm:
+            name = prm[1].strip()
+            if name == '群友':
+                return '唔得，一个一个查'
+            await self.api.send_group_msg(
+                group_id=message['group_id'],
+                message=f'正在查询',
+            )
+            steamdata = loadjson(STEAM)
+            obj = self.whois.object_explainer(group, user, name)
+            name = obj['name'] or name
+            id3 = steamdata['subscribers'].get(obj['uid'])
+            if not id3:
+                if obj['uid'] == UNKNOWN:
+                    return f'我们群里有{name}吗？'
+                return f'查不了，{name}可能还没有绑定SteamID'
+            match_id, start_time = self.dota2.get_last_match(id3)
+            if match_id and start_time:
+                reply = '{}的最近一场Dota 2比赛编号为{}'.format(name, match_id)
+                reply += '，开始于{}'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time)))
+                reply += '\n如果想要看图片战报，请发送“查询战报 {}”'.format(match_id)
+                return reply
+            else:
+                return '查不到哟'
+
         prm = re.match('查询(.+)的天梯段位$', msg)
         if prm:
             await self.api.send_group_msg(
-                    group_id=message['group_id'],
-                    message=f'正在查询',
-                )
+                group_id=message['group_id'],
+                message=f'正在查询',
+            )
             name = prm[1].strip()
             steamdata = loadjson(STEAM)
             memberdata = loadjson(MEMBER)
             if re.search('群友', name):
-                is_solo = False
                 players_in_group = []
                 for qq, id3 in steamdata['subscribers'].items():
                     if qq in memberdata[group]:
                         players_in_group.append(id3)
                 players_in_group = list(set(players_in_group))
             else:
-                is_solo = True
                 obj = self.whois.object_explainer(group, user, name)
                 name = obj['name'] or name
                 id3 = steamdata['subscribers'].get(obj['uid'])
@@ -280,7 +304,6 @@ class Steam:
             if name == '群友':
                 return '唔得，一个一个查'
             steamdata = loadjson(STEAM)
-            memberdata = loadjson(MEMBER)
             obj = self.whois.object_explainer(group, user, name)
             name = obj['name'] or name
             id3 = steamdata['subscribers'].get(obj['uid'])
