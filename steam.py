@@ -321,6 +321,28 @@ class Steam:
                         break
                 return f'{name}玩过{hero_num}个英雄，其中大于等于20局的有{hero_ge20}个'
 
+        prm = re.match('查询战报(.*)', msg, re.I)
+        if prm:
+            usage = '使用方法：\n查询战报 Dota2比赛编号'
+            try:
+                match_id = int(prm[1])
+                steamdata = loadjson(STEAM)
+                match_id = str(match_id)
+                if steamdata['DOTA2_matches_pool'].get(match_id, 0) != 0:
+                    return f'比赛{match_id}已在比赛池中，战报将稍后发出'
+                steamdata['DOTA2_matches_pool'][match_id] = {
+                    'request_attempts': 0,
+                    'players': [],
+                    'is_solo': {
+                        'group': group,
+                        'user' : user,
+                    },
+                }
+                dumpjson(steamdata, STEAM)
+                return f'比赛{match_id}已添加至比赛池，战报将稍后发出'
+            except Exception as e:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'查询战报失败', e)
+                return usage
 
     def jobs(self):
         trigger = CronTrigger(minute='*', second='30')
@@ -458,7 +480,8 @@ class Steam:
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'Steam雷达扫描到了{len(news)}个新事件')
 
         for msg in news:
-            msg['target_groups'] = []
+            if msg.get('target_groups', 0) == 0:
+                msg['target_groups'] = []
             for u in msg['user']:
                 for g in memberdata:
                     if u in memberdata[g] and g not in msg['target_groups']:
@@ -1114,21 +1137,35 @@ class Dota2:
         reports = []
         todelete = []
         for match_id, match_info in steamdata['DOTA2_matches_pool'].items():
-            now = int(datetime.now().timestamp())
-            if match_info['start_time'] <= now - 86400 * 7:
-                todelete.append(match_id)
-                continue
-            m = self.generate_match_message(match_id)
-            if isinstance(m, str):
-                self.generate_match_image(match_id)
-                m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
-                reports.append(
-                    {
-                        'message': m,
-                        'user'   : match_info['subscribers']
-                    }
-                )
-                todelete.append(match_id)
+            if match_info.get('is_solo'):
+                if self.get_match(match_id):
+                    self.generate_match_image(match_id)
+                    m = '[CQ:at,qq={}]'.format(match_info['is_solo']['user'])
+                    m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
+                    reports.append(
+                        {
+                            'message': m,
+                            'target_groups': [match_info['is_solo']['group']],
+                            'user': [],
+                        }
+                    )
+                    todelete.append(match_id)
+            else:
+                now = int(datetime.now().timestamp())
+                if match_info['start_time'] <= now - 86400 * 7:
+                    todelete.append(match_id)
+                    continue
+                m = self.generate_match_message(match_id)
+                if isinstance(m, str):
+                    self.generate_match_image(match_id)
+                    m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
+                    reports.append(
+                        {
+                            'message': m,
+                            'user' : match_info['subscribers'],
+                        }
+                    )
+                    todelete.append(match_id)
         # 数据在生成比赛报告的过程中会被修改，需要重新读取
         steamdata = loadjson(STEAM)
         for match_id in todelete:
