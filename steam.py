@@ -231,32 +231,6 @@ class Steam:
                 return '群友都没在玩游戏'
             return IDK
 
-        prm = re.match('查询(.+)的最近比赛$', msg)
-        if prm:
-            name = prm[1].strip()
-            if name == '群友':
-                return '唔得，一个一个查'
-            await self.api.send_group_msg(
-                group_id=message['group_id'],
-                message=f'正在查询',
-            )
-            steamdata = loadjson(STEAM)
-            obj = self.whois.object_explainer(group, user, name)
-            name = obj['name'] or name
-            id3 = steamdata['subscribers'].get(obj['uid'])
-            if not id3:
-                if obj['uid'] == UNKNOWN:
-                    return f'我们群里有{name}吗？'
-                return f'查不了，{name}可能还没有绑定SteamID'
-            match_id, start_time = self.dota2.get_last_match(id3)
-            if match_id and start_time:
-                reply = '{}的最近一场Dota 2比赛编号为{}'.format(name, match_id)
-                reply += '，开始于{}'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time)))
-                reply += '\n如果想要看图片战报，请发送“查询战报 {}”'.format(match_id)
-                return reply
-            else:
-                return '查不到哟'
-
         prm = re.match('查询(.+)的天梯段位$', msg)
         if prm:
             await self.api.send_group_msg(
@@ -348,11 +322,10 @@ class Steam:
         if prm:
             usage = '使用方法：\n查询战报 Dota2比赛编号'
             try:
-                match_id = int(prm[1])
+                match_id = str(int(prm[1]))
                 steamdata = loadjson(STEAM)
-                match_id = str(match_id)
                 if steamdata['DOTA2_matches_pool'].get(match_id, 0) != 0:
-                    return f'比赛{match_id}已在比赛池中，战报将稍后发出'
+                    return f'比赛{match_id}已在比赛缓冲池中，战报将稍后发出'
                 steamdata['DOTA2_matches_pool'][match_id] = {
                     'request_attempts': 0,
                     'players': [],
@@ -362,10 +335,52 @@ class Steam:
                     },
                 }
                 dumpjson(steamdata, STEAM)
-                return f'比赛{match_id}已添加至比赛池，战报将稍后发出'
+                return f'已将比赛{match_id}添加至比赛缓冲池，战报将稍后发出'
             except Exception as e:
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'查询战报失败', e)
                 return usage
+
+        prm = re.match('查询(.+)的最近比赛$', msg)
+        if prm:
+            name = prm[1].strip()
+            if name == '群友':
+                return '唔得，一个一个查'
+            await self.api.send_group_msg(
+                group_id=message['group_id'],
+                message=f'正在查询',
+            )
+            steamdata = loadjson(STEAM)
+            obj = self.whois.object_explainer(group, user, name)
+            name = obj['name'] or name
+            id3 = steamdata['subscribers'].get(obj['uid'])
+            if not id3:
+                if obj['uid'] == UNKNOWN:
+                    return f'我们群里有{name}吗？'
+                return f'查不了，{name}可能还没有绑定SteamID'
+            match_id, start_time = self.dota2.get_last_match(id3)
+            if match_id and start_time:
+                replys = []
+                match_id = str(match_id)
+                replys.append('{}的最近一场Dota 2比赛编号为{}'.format(name, match_id))
+                replys.append('开始于{}'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))))
+                if steamdata['DOTA2_matches_pool'].get(match_id, 0) != 0:
+                    replys.append('该比赛已在比赛缓冲池中')
+                else:
+                    steamdata['DOTA2_matches_pool'][match_id] = {
+                        'request_attempts': 0,
+                        'players': [],
+                        'is_solo': {
+                            'group': group,
+                            'user' : user,
+                        },
+                    }
+                    dumpjson(steamdata, STEAM)
+                    replys.append( '已将该比赛添加至比赛缓冲池')
+                replys.append('战报将稍后发出')
+                return '，'.join(replys)
+            else:
+                return '查不到哟'
+
 
     def jobs(self):
         trigger = CronTrigger(minute='*', second='30')
@@ -1163,7 +1178,7 @@ class Dota2:
             if match_info.get('is_solo'):
                 if self.get_match(match_id):
                     self.generate_match_image(match_id)
-                    m = '[CQ:at,qq={}]'.format(match_info['is_solo']['user'])
+                    m = '[CQ:at,qq={}] 你点的比赛战报来了！'.format(match_info['is_solo']['user'])
                     m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
                     reports.append(
                         {
