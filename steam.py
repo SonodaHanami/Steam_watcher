@@ -361,8 +361,9 @@ class Steam:
             if match_id and start_time:
                 replys = []
                 match_id = str(match_id)
-                replys.append('{}的最近一场Dota 2比赛编号为{}'.format(name, match_id))
-                replys.append('开始于{}'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))))
+                replys.append('查到了')
+                # replys.append('{}的最近一场Dota 2比赛编号为{}'.format(name, match_id))
+                # replys.append('开始于{}'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))))
                 if steamdata['DOTA2_matches_pool'].get(match_id, 0) != 0:
                     replys.append('该比赛已在比赛缓冲池中')
                 else:
@@ -376,7 +377,10 @@ class Steam:
                     }
                     dumpjson(steamdata, STEAM)
                     replys.append( '已将该比赛添加至比赛缓冲池')
-                replys.append('战报将稍后发出')
+                if group in steamdata['subscribe_groups']:
+                    replys.append('等着瞧吧（指战报）')
+                else:
+                    replys.append('但是因为本群未订阅Steam所以不会发出来')
                 return '，'.join(replys)
             else:
                 return '查不到哟'
