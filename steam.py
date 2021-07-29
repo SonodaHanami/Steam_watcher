@@ -945,7 +945,7 @@ class Dota2:
         max_stuns = [0, 0]
         max_healing = [0, 0]
         max_hurt = [0, 0]
-        min_participation = [0, 999, 999999]
+        min_participation = [0, 999, 999, 999999]
         for slot in range(0, 2):
             team_damage = 0
             team_damage_received = 0
@@ -1047,8 +1047,14 @@ class Dota2:
                     max_healing = [idx, p['hero_healing']]
                 if p['hurt'] > max_hurt[1]:
                     max_hurt = [idx, p['hurt']]
-                if p['participation'] < min_participation[1] or (p['participation'] == min_participation[1] and p['hero_damage'] < min_participation[2]):
-                    min_participation = [idx, p['participation'], p['hero_damage']]
+                if (
+                    p['participation'] < min_participation[1]
+                ) or (
+                    p['participation'] == min_participation[1] and p['kills'] + p['assists'] < min_participation[2]
+                ) or (
+                    p['participation'] == min_participation[1] and p['kills'] + p['assists'] == min_participation[2] and p['hero_damage'] < min_participation[3]
+                ):
+                    min_participation = [idx, p['participation'], p['kills'] + p['assists'], p['hero_damage']]
 
                 scepter = 0
                 shard = 0
