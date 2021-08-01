@@ -1186,10 +1186,18 @@ class Dota2:
         todelete = []
         for match_id, match_info in steamdata['DOTA2_matches_pool'].items():
             if match_info.get('is_solo'):
-                if self.get_match(match_id):
-                    self.generate_match_image(match_id)
-                    m = '[CQ:at,qq={}] 你点的比赛战报来了！'.format(match_info['is_solo']['user'])
-                    m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
+                match = self.get_match(match_id)
+                if match:
+                    if match.get('error'):
+                        print('{} 比赛编号 {} 在分析结果中发现错误 {}'.format(
+                            datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id, match['error']
+                        ))
+                        m = '[CQ:at,qq={}] 你点的比赛战报来不了了！'.format(match_info['is_solo']['user'])
+                        m += '\n在分析结果中发现错误 {}'.format(match['error'])
+                    else:
+                        self.generate_match_image(match_id)
+                        m = '[CQ:at,qq={}] 你点的比赛战报来了！'.format(match_info['is_solo']['user'])
+                        m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
                     reports.append(
                         {
                             'message': m,
