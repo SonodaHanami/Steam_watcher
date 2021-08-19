@@ -969,7 +969,7 @@ class Dota2:
                 team_deaths += p['deaths']
                 team_gold += p['net_worth']
                 team_exp += p['total_xp']
-                hero_img = self.get_image('{}_full.png'.format(HEROES[p['hero_id']]))
+                hero_img = self.get_image('{}_full.png'.format(HEROES.get(p['hero_id'])))
                 hero_img = hero_img.resize((64, 36), Image.ANTIALIAS)
                 image.paste(hero_img, (10, 170 + slot * 60 + idx * 65))
                 draw.rectangle((54, 191 + slot * 60 + idx * 65, 73, 205 + slot * 60 + idx * 65), fill=(50, 50, 50))
@@ -1064,7 +1064,7 @@ class Dota2:
                     if p[item] == 0:
                         item_img = Image.new('RGB', (40, 30), (128, 128, 128))
                     else:
-                        item_img = self.get_image('{}_lg.png'.format(ITEMS[p[item]]))
+                        item_img = self.get_image('{}_lg.png'.format(ITEMS.get(p[item])))
                     if p[item] == 108:
                         scepter = 1
                     if item == 'item_neutral':
@@ -1099,7 +1099,7 @@ class Dota2:
                         for pl in p['purchase_log']:
                             if p[item] == 0:
                                 continue
-                            if pl['key'] == ITEMS[p[item]]:
+                            if pl['key'] == ITEMS.get(p[item]):
                                 purchase_time = pl['time']
                                 pl['key'] += '_'
                                 break
