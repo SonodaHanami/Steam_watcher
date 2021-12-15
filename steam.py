@@ -663,26 +663,21 @@ class Dota2:
             if match_id in steamdata['DOTA2_matches_pool']:
                 if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
-                    if not match.get('players'):
-                        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
-                        try:
-                            match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
-                        except requests.exceptions.RequestException as e:
-                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale MATCH_DETAILS', e)
-                            raise
-                    match['incomplete'] = True
-                    dumpjson(match, MATCH)
-                    return match
+            if not match.get('players'):
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
+                try:
+                    match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
+                    match['from_valve'] = True
+                except requests.exceptions.RequestException as e:
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale MATCH_DETAILS', e)
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '从Valve的API获取比赛结果失败', e)
+                    raise
+            if not match.get('game_mode'):
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛分析结果不完整')
             if match['game_mode'] in (15, 19):
                 # 活动模式
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 活动模式，跳过分析'.format(match_id))
-                match['incomplete'] = True
-                if match_id in steamdata['DOTA2_matches_pool']:
-                    for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
-                        for pm in match['players']:
-                            if pp['steam_id3'] == pm['account_id']:
-                                pm['personaname'] = pp['personaname']
-                                break
+                match = {'error': '活动模式，跳过分析'}
                 dumpjson(match, MATCH)
                 return match
             received = match['players'][0]['damage_inflictor_received']
@@ -694,7 +689,7 @@ class Dota2:
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id, attempts, e)
             dumpjson(steamdata, STEAM)
             return {}
-        if received is None:
+        if received is None and not match.get('from_valve'):
             # 比赛分析结果不完整
             job_id = None
             if match_id in steamdata['DOTA2_matches_pool']:
@@ -736,8 +731,12 @@ class Dota2:
                     dumpjson(steamdata, STEAM)
                 return {}
         else:
-            # 比赛分析结果完整了
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取到分析结果'.format(match_id))
+            if match.get('from_valve'):
+                # 比赛结果来自Valve的API
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从Valve的API获取到分析结果'.format(match_id))
+            else:
+                # 比赛分析结果完整了
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取到分析结果'.format(match_id))
             if match_id in steamdata['DOTA2_matches_pool']:
                 for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
                     for pm in match['players']:
@@ -1226,16 +1225,24 @@ class Dota2:
                 if match_info['start_time'] <= now - 86400 * 7:
                     todelete.append(match_id)
                     continue
-                m = self.generate_match_message(match_id)
-                if isinstance(m, str):
-                    self.generate_match_image(match_id)
-                    m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
-                    reports.append(
-                        {
-                            'message': m,
-                            'user' : match_info['subscribers'],
-                        }
-                    )
+                match = self.get_match(match_id)
+                if match:
+                    if match.get('error'):
+                        print(
+                            datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                            '比赛编号 {} 在分析结果中发现错误 {}'.format(match_id, match['error'])
+                        )
+                    else:
+                        m = self.generate_match_message(match_id)
+                        if isinstance(m, str):
+                            self.generate_match_image(match_id)
+                            m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
+                            reports.append(
+                                {
+                                    'message': m,
+                                    'user' : match_info['subscribers'],
+                                }
+                            )
                     todelete.append(match_id)
         # 数据在生成比赛报告的过程中会被修改，需要重新读取
         steamdata = loadjson(STEAM)
