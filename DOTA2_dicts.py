@@ -272,6 +272,7 @@ HEROES = {
     128: 'snapfire',
     129: 'mars',
     135: 'dawnbreaker',
+    136: 'marci'
 }
 
 HEROES_CHINESE = {
@@ -396,6 +397,7 @@ HEROES_CHINESE = {
     128: ['电炎绝手', '老奶奶'],
     129: ['玛尔斯'],
     135: ['破晓辰星'],
+    136: ['玛西'],
 }
 
 ITEMS = {
