@@ -389,7 +389,9 @@ class Steam:
     def jobs(self):
         trigger = CronTrigger(minute='*', second='30')
         job = (trigger, self.send_news_async)
-        return (job,)
+        trigger = CronTrigger(hour='5')
+        clear = (trigger, self.clear_matches)
+        return (job, clear)
 
     async def send_news_async(self):
         steamdata = loadjson(STEAM)
@@ -530,6 +532,18 @@ class Steam:
                         msg['target_groups'].append(g)
 
         return news
+
+    def clear_matches(self):
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理本地保存的比赛分析数据和战报图片')
+        try:
+            cnt = len(os.listdir(DOTA2_MATCHES))
+            size = 0
+            for f in os.listdir(DOTA2_MATCHES):
+                size += os.path.getsize(os.path.join(DOTA2_MATCHES, f))
+                os.remove(os.path.join(DOTA2_MATCHES, f))
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理完成，删除了{}个文件，size={}'.format(cnt, size))
+        except Exception as e:
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理失败', e)
 
     def init_fonts(self):
         print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化字体')
