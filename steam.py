@@ -650,7 +650,7 @@ class Dota2:
                 if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
                     print('{} 比赛编号 {} 重试次数过多，跳过分析'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
                     if not match.get('players'):
-                        print('{} 比赛编号 {} 从OPENDOTA获取不到分析结果，使用Value的API'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+                        print('{} 比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
                         try:
                             match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
                         except requests.exceptions.RequestException as e:
@@ -1173,7 +1173,7 @@ class Dota2:
 
         draw.text(
             (10, 880),
-            '※录像分析数据来自opendota.com，DOTA2游戏图片素材版权归Value所有',
+            '※录像分析数据来自opendota.com，DOTA2游戏图片素材版权归Valve所有',
             font=font,
             fill=(128, 128, 128)
         )
