@@ -464,7 +464,7 @@ class Steam:
             # DOTA2最近比赛更新
             # 每分钟请求时只请求最近3小时内有DOTA2活动的玩家的最近比赛，其余玩家的比赛仅每小时请求一次
             if steamdata['players'][id3]['last_DOTA2_action'] >= now - 10800 or datetime.now().minute == self.MINUTE:
-                # print('{} 请求最近比赛更新 {}'.format(datetime.now(), id64))
+                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '请求最近比赛更新', id64)
                 match_id, start_time = self.dota2.get_last_match(id64)
             else:
                 match_id, start_time = (0, 0) # 将跳过之后的步骤
@@ -651,7 +651,7 @@ class Dota2:
     def get_match(self, match_id):
         MATCH = os.path.join(DOTA2_MATCHES, f'{match_id}.json')
         if os.path.exists(MATCH):
-            print('{} 比赛编号 {} 读取本地保存的分析结果'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 读取本地保存的分析结果'.format(match_id))
             return loadjson(MATCH)
         steamdata = loadjson(STEAM)
         try:
@@ -662,9 +662,9 @@ class Dota2:
                 raise
             if match_id in steamdata['DOTA2_matches_pool']:
                 if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
-                    print('{} 比赛编号 {} 重试次数过多，跳过分析'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
                     if not match.get('players'):
-                        print('{} 比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+                        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
                         try:
                             match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
                         except requests.exceptions.RequestException as e:
@@ -675,7 +675,7 @@ class Dota2:
                     return match
             if match['game_mode'] in (15, 19):
                 # 活动模式
-                print('{} 比赛编号 {} 活动模式，跳过分析'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 活动模式，跳过分析'.format(match_id))
                 match['incomplete'] = True
                 if match_id in steamdata['DOTA2_matches_pool']:
                     for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
@@ -691,7 +691,7 @@ class Dota2:
             if match_id in steamdata['DOTA2_matches_pool']:
                 steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] += 1
                 attempts = '（第{}次）'.format(steamdata['DOTA2_matches_pool'][match_id]['request_attempts'])
-            print('{} {}{} {}'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id, attempts, e))
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id, attempts, e)
             dumpjson(steamdata, STEAM)
             return {}
         if received is None:
@@ -708,7 +708,7 @@ class Dota2:
                     return {}
                 if j:
                     # 查询返回了数据，说明job仍未完成
-                    print('{} job_id {} 仍在处理中'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), job_id))
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'job_id {} 仍在处理中'.format(job_id))
                     return {}
                 else:
                     # job完成了，可以删掉
@@ -727,17 +727,17 @@ class Dota2:
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_REQUEST', e)
                     return {}
                 job_id = j['job']['jobId']
-                print('{} 比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(
+                print(
                     datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
-                    match_id, attempts, job_id
-                ))
+                    '比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(match_id, attempts, job_id)
+                )
                 if match_id in steamdata['DOTA2_matches_pool']:
                     steamdata['DOTA2_matches_pool'][match_id]['job_id'] = job_id
                     dumpjson(steamdata, STEAM)
                 return {}
         else:
             # 比赛分析结果完整了
-            print('{} 比赛编号 {} 从OPENDOTA获取到分析结果'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取到分析结果'.format(match_id))
             if match_id in steamdata['DOTA2_matches_pool']:
                 for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
                     for pm in match['players']:
@@ -1192,7 +1192,7 @@ class Dota2:
             fill=(128, 128, 128)
         )
         image.save(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'png')
-        print('{} 比赛编号 {} 生成战报图片'.format(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id))
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 生成战报图片'.format(match_id))
 
     def get_matches_report(self):
         steamdata = loadjson(STEAM)
@@ -1203,9 +1203,10 @@ class Dota2:
                 match = self.get_match(match_id)
                 if match:
                     if match.get('error'):
-                        print('{} 比赛编号 {} 在分析结果中发现错误 {}'.format(
-                            datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id, match['error']
-                        ))
+                        print(
+                            datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                            '比赛编号 {} 在分析结果中发现错误 {}'.format(match_id, match['error'])
+                        )
                         m = '[CQ:at,qq={}] 你点的比赛战报来不了了！'.format(match_info['is_solo']['user'])
                         m += '\n在分析结果中发现错误 {}'.format(match['error'])
                     else:
