@@ -664,6 +664,8 @@ class Dota2:
                 if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
             if not match.get('players'):
+                if match.get('error'):
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'OPENDOTA 返回错误信息', match['error'])
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
                 try:
                     match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
@@ -680,7 +682,7 @@ class Dota2:
                 match = {'error': '活动模式，跳过分析'}
                 dumpjson(match, MATCH)
                 return match
-            received = match['players'][0]['damage_inflictor_received']
+            received = match['players'][0].get('damage_inflictor_received', None)
         except Exception as e:
             attempts = ''
             if match_id in steamdata['DOTA2_matches_pool']:
@@ -928,7 +930,7 @@ class Dota2:
         draw.text((480, 40), skill, font=font, fill=(255, 255, 255))
         draw.text((560, 40), region, font=font, fill=(255, 255, 255))
         draw.text((650, 40), f'{mode}/{lobby}', font=font, fill=(255, 255, 255))
-        if match.get('incomplete'):
+        if match.get('from_valve'):
             draw.text((30, 40), '※分析结果不完整', font=font, fill=(255, 180, 0))
         else:
             draw.text((30, 40), '※录像分析成功', font=font, fill=(123, 163, 52))
