@@ -1004,7 +1004,7 @@ class Dota2:
                 rank = '[{}{}] '.format(PLAYER_RANK[rank], star if star else '')
                 rank_size = font.getsize(rank)
                 draw.text((122, 167 + slot * 60 + idx * 65), rank, font=font, fill=(128, 128, 128))
-                pname = p.get('personaname') if p.get('personaname') else '匿名玩家'
+                pname = p.get('personaname') if p.get('personaname') else '匿名玩家 {}'.format(p.get('account_id') if p.get('account_id') else '')
                 pname_size = font.getsize(pname)
                 while rank_size[0] + pname_size[0] > 240:
                     pname = pname[:-2] + '…'
