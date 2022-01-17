@@ -50,6 +50,8 @@ class Steam:
         self.whois = whois.Whois(**kwargs)
         self.dota2 = Dota2()
         self.MINUTE = random.randint(0, 59)
+        self.nowork = 0
+        self.nosleep = 0
 
         mkdir_if_not_exists(DOTA2_MATCHES)
         self.init_fonts()
@@ -385,6 +387,13 @@ class Steam:
             else:
                 return '查不到哟'
 
+        if msg.startswith(ATBOT) and '今天' in msg and ('放假' in msg or '休息' in msg or '不上班' in msg):
+            self.nowork = int(datetime.now().replace(hour=23, minute=59, second=59).timestamp())
+            return f'[CQ:at,qq={user}] 好的，今天不上班'
+        if msg.startswith(ATBOT) and '今晚' in msg and ('通宵' in msg or '不睡觉' in msg):
+            self.nosleep = int(datetime.now().replace(hour=5, minute=59, second=59).timestamp())
+            return f'[CQ:at,qq={user}] 好的，今晚不睡觉'
+
 
     def jobs(self):
         trigger = CronTrigger(minute='*', second='30')
@@ -445,9 +454,9 @@ class Steam:
                         mt = f'{pname}玩了{minutes}分钟{pre_game}后，玩起了{cur_game}'
                     else:
                         mt = f'{pname}启动了{cur_game}'
-                    if datetime.now().hour <= 6:
+                    if datetime.now().hour < 6 and now > self.nosleep:
                         mt += '\n你他娘的不用睡觉吗？'
-                    if datetime.now().weekday() < 5 and datetime.now().hour in range(8, 18):
+                    if datetime.now().weekday() < 5 and datetime.now().hour in range(8, 18) and now > self.nowork:
                         mt += '\n见鬼，这群人都不用上班的吗'
                     news.append({
                         'message': mt,
