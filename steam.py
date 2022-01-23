@@ -770,8 +770,12 @@ class Dota2:
             player['net_worth'] = player.get('total_gold') or 0
         if not player.get('total_xp'):
             player['total_xp'] = 0
+        if not player.get('hero_damage'):
+            player['hero_damage'] = 0
         if not player.get('damage_inflictor_received'):
             player['damage_inflictor_received'] = {}
+        if not player.get('tower_damage'):
+            player['tower_damage'] = 0
         if not player.get('hero_healing'):
             player['hero_healing'] = 0
         if not player.get('stuns'):
