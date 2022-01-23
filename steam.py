@@ -672,6 +672,7 @@ class Dota2:
             if match_id in steamdata['DOTA2_matches_pool']:
                 if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
+                    match = {}
             if not match.get('players'):
                 if match.get('error'):
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'OPENDOTA 返回错误信息', match['error'])
