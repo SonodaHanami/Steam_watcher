@@ -390,9 +390,15 @@ class Steam:
         if msg.startswith(ATBOT) and '今天' in msg and ('放假' in msg or '休息' in msg or '不上班' in msg):
             self.nowork = int(datetime.now().replace(hour=23, minute=59, second=59).timestamp())
             return f'[CQ:at,qq={user}] 好的，今天不上班'
+        elif msg.startswith(ATBOT) and '今天' in msg and ('不放假' in msg or '不休息' in msg or '上班' in msg):
+            self.nowork = 0
+            return f'[CQ:at,qq={user}] 好的，今天上班'
         if msg.startswith(ATBOT) and '今晚' in msg and ('通宵' in msg or '不睡觉' in msg):
             self.nosleep = int(datetime.now().replace(hour=5, minute=59, second=59).timestamp())
             return f'[CQ:at,qq={user}] 好的，今晚不睡觉'
+        elif msg.startswith(ATBOT) and '今晚' in msg and ('不通宵' in msg or '养生' in msg):
+            self.nosleep = 0
+            return f'[CQ:at,qq={user}] 好的，今晚养生'
 
 
     def jobs(self):
