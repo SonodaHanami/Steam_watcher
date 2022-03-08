@@ -71,6 +71,12 @@ class Whois:
                 return self.add_alias(group, user, prm[1], prm[2].strip())
             except:
                 return '嗯？ {}'.format(str(sys.exc_info()))
+        if atbot and re.match('.+不是.*', msg):
+            prm = re.match('(.+)不是(.*)', msg)
+            try:
+                return self.del_other_alias(group, user, prm[1], prm[2].strip())
+            except:
+                return '嗯？ {}'.format(str(sys.exc_info()))
         if msg.startswith('请叫我') and atbot:
             return self.set_default_alias(group, user, msg[3:])
 
@@ -221,6 +227,26 @@ class Whois:
             return reply
         else:
             return f'你本来就不是{name}'
+
+    def del_other_alias(self, group, user, subject, name):
+        data = loadjson(MEMBER)
+        sbj = self.object_explainer(group, user, subject)
+        if group not in data:
+            return None
+        elif sbj['uid'] not in data[group]:
+            return f'{sbj["name"]}是谁啊？'
+        elif name in data[group][sbj['uid']]:
+            reply = f'好，{sbj["name"]}不再是{name}了'
+            data[group][sbj['uid']].remove(name)
+            if len(data[group][sbj['uid']]) == 0:
+                data[group].pop(sbj['uid'])
+                reply += f'\n现在群友名单里没有{sbj["name"]}了'
+            with open(MEMBER, 'w', encoding='utf8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            self._update()
+            return reply
+        else:
+            return f'{sbj["name"]}本来就不是{name}'
 
 
     def del_all_alias(self, group, user):
