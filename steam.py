@@ -38,6 +38,9 @@ DEFAULT_DATA = {
     'subscribers': {},
 }
 
+def IdHash(id3: int):
+    return id3 + 76561197960265728
+
 class Steam:
     Passive = True
     Active = True
@@ -108,7 +111,7 @@ class Steam:
                 )
                 if id3 > 76561197960265728:
                     id3 -= 76561197960265728
-                id64 = id3 + 76561197960265728
+                id64 = IdHash(id3)
                 id3 = str(id3)
                 steamdata = loadjson(STEAM)
                 # 之前已经绑定过
@@ -820,6 +823,7 @@ class Dota2:
         players = steamdata['DOTA2_matches_pool'][match_id]['players']
         start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(match['start_time']))
         duration = match['duration']
+        jiange = False
 
         # 比赛模式
         mode_id = match['game_mode']
@@ -831,6 +835,8 @@ class Dota2:
         for i in players:
             for j in match['players']:
                 if i['steam_id3'] == j['account_id']:
+                    if i['steam_id3'] == 191299708:
+                        jiange = True
                     i['dota2_kill'] = j['kills']
                     i['dota2_death'] = j['deaths']
                     i['dota2_assist'] = j['assists']
@@ -866,22 +872,24 @@ class Dota2:
                 top_kda = i['kda']
 
         if (win and top_kda > 5) or (not win and top_kda > 3):
-            postive = True
+            positive = True
         elif (win and top_kda < 2) or (not win and top_kda < 1):
-            postive = False
+            positive = False
         else:
             if random.randint(0, 1) == 0:
-                postive = True
+                positive = True
             else:
-                postive = False
+                positive = False
+        if jiange:
+            positive = True
 
         tosend = []
-        if win and postive:
-            tosend.append(random.choice(WIN_POSTIVE).format(personanames))
-        elif win and not postive:
+        if win and positive:
+            tosend.append(random.choice(WIN_POSITIVE).format(personanames))
+        elif win and not positive:
             tosend.append(random.choice(WIN_NEGATIVE).format(personanames))
-        elif not win and postive:
-            tosend.append(random.choice(LOSE_POSTIVE).format(personanames))
+        elif not win and positive:
+            tosend.append(random.choice(LOSE_POSITIVE).format(personanames))
         else:
             tosend.append(random.choice(LOSE_NEGATIVE).format(personanames))
 
