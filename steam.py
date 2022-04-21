@@ -880,18 +880,22 @@ class Dota2:
                 positive = True
             else:
                 positive = False
-        if jiange:
-            positive = True
 
         tosend = []
-        if win and positive:
-            tosend.append(random.choice(WIN_POSITIVE).format(personanames))
-        elif win and not positive:
-            tosend.append(random.choice(WIN_NEGATIVE).format(personanames))
-        elif not win and positive:
-            tosend.append(random.choice(LOSE_POSITIVE).format(personanames))
+        if jiange:
+            if win:
+                tosend.append(random.choice(WIN_JIANGE).format(personanames))
+            else:
+                tosend.append(random.choice(LOSE_JIANGE).format(personanames))
         else:
-            tosend.append(random.choice(LOSE_NEGATIVE).format(personanames))
+            if win and positive:
+                tosend.append(random.choice(WIN_POSITIVE).format(personanames))
+            elif win and not positive:
+                tosend.append(random.choice(WIN_NEGATIVE).format(personanames))
+            elif not win and positive:
+                tosend.append(random.choice(LOSE_POSITIVE).format(personanames))
+            else:
+                tosend.append(random.choice(LOSE_NEGATIVE).format(personanames))
 
         tosend.append('开始时间: {}'.format(start_time))
         tosend.append('持续时间: {:.0f}分{:.0f}秒'.format(duration / 60, duration % 60))

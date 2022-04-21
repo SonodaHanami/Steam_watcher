@@ -65,16 +65,16 @@ class Whois:
 
         if atbot and msg.startswith('我不是'):
             return self.del_alias(group, user, msg[3:])
-        if atbot and re.match('.+是.*', msg):
-            prm = re.match('(.+)是(.*)', msg)
-            try:
-                return self.add_alias(group, user, prm[1], prm[2].strip())
-            except:
-                return '嗯？ {}'.format(str(sys.exc_info()))
         if atbot and re.match('.+不是.*', msg):
             prm = re.match('(.+)不是(.*)', msg)
             try:
                 return self.del_other_alias(group, user, prm[1], prm[2].strip())
+            except:
+                return '嗯？ {}'.format(str(sys.exc_info()))
+        if atbot and re.match('.+是.*', msg):
+            prm = re.match('(.+)是(.*)', msg)
+            try:
+                return self.add_alias(group, user, prm[1], prm[2].strip())
             except:
                 return '嗯？ {}'.format(str(sys.exc_info()))
         if msg.startswith('请叫我') and atbot:
