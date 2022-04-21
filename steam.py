@@ -835,7 +835,7 @@ class Dota2:
         for i in players:
             for j in match['players']:
                 if i['steam_id3'] == j['account_id']:
-                    if i['steam_id3'] == '191299708':
+                    if int(i['steam_id3']) == 191299708:
                         jiange = True
                     i['dota2_kill'] = j['kills']
                     i['dota2_death'] = j['deaths']
