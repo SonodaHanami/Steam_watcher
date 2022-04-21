@@ -38,8 +38,17 @@ DEFAULT_DATA = {
     'subscribers': {},
 }
 
+
 def IdHash(id3: int):
     return id3 + 76561197960265728
+
+
+def is_jiange(id):
+    if id == '191299708':
+        return True
+    else:
+        return False
+
 
 class Steam:
     Passive = True
@@ -464,9 +473,15 @@ class Steam:
                     else:
                         mt = f'{pname}启动了{cur_game}'
                     if datetime.now().hour < 6 and now > self.nosleep:
-                        mt += '\n你他娘的不用睡觉吗？'
+                        if is_jiange(id3):
+                            mt += '\n键哥是不用睡觉的'
+                        else:
+                            mt += '\n你他娘的不用睡觉吗？'
                     if datetime.now().weekday() < 5 and datetime.now().hour in range(8, 18) and now > self.nowork:
-                        mt += '\n见鬼，这群人都不用上班的吗'
+                        if is_jiange(id3):
+                            mt += '\n键哥是不用上班的'
+                        else:
+                            mt += '\n见鬼，这群人都不用上班的吗'
                     news.append({
                         'message': mt,
                         'user'   : players[id64]
