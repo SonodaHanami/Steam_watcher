@@ -474,12 +474,12 @@ class Steam:
                         mt = f'{pname}启动了{cur_game}'
                     if datetime.now().hour < 6 and now > self.nosleep:
                         if is_jiange(id3):
-                            mt += '\n键哥是不用睡觉的'
+                            mt += '\n键哥是不用睡觉的,牛键哥牛'
                         else:
                             mt += '\n你他娘的不用睡觉吗？'
                     if datetime.now().weekday() < 5 and datetime.now().hour in range(8, 18) and now > self.nowork:
                         if is_jiange(id3):
-                            mt += '\n键哥是不用上班的'
+                            mt += '\n键哥是不用上班的,牛键哥牛'
                         else:
                             mt += '\n见鬼，这群人都不用上班的吗'
                     news.append({
@@ -850,7 +850,7 @@ class Dota2:
         for i in players:
             for j in match['players']:
                 if i['steam_id3'] == j['account_id']:
-                    if i['steam_id3'] == '191299708':
+                    if int(i['steam_id3']) == 191299708:
                         jiange = True
                     i['dota2_kill'] = j['kills']
                     i['dota2_death'] = j['deaths']
