@@ -20,7 +20,7 @@ UNKNOWN = None
 IDK = '我不知道'
 MAX_ATTEMPTS = 5
 MEMBER = os.path.expanduser('~/.Steam_watcher/member.json')
-STEAM  = os.path.expanduser('~/.Steam_watcher/steam.json')
+STEAM = os.path.expanduser('~/.Steam_watcher/steam.json')
 IMAGES = os.path.expanduser('~/.Steam_watcher/images/')
 DOTA2_MATCHES = os.path.expanduser('~/.Steam_watcher/DOTA2_matches/')
 
@@ -72,7 +72,6 @@ class Steam:
             dumpjson(DEFAULT_DATA, STEAM)
 
         print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam 完成！MINUTE={}'.format(self.MINUTE))
-
 
     async def execute_async(self, func_num, message):
         msg = message['raw_message'].strip()
@@ -222,7 +221,7 @@ class Steam:
                     sids = steam_info.get('steam_id64')
                     if not sids:
                         return IDK
-                else: # steam_info is None
+                else:  # steam_info is None
                     if obj['uid'] == UNKNOWN:
                         return f'我们群里有{name}吗？'
                     return f'{IDK}，因为{name}还没有绑定SteamID'
@@ -345,7 +344,7 @@ class Steam:
                     'players': [],
                     'is_solo': {
                         'group': group,
-                        'user' : user,
+                        'user': user,
                     },
                 }
                 dumpjson(steamdata, STEAM)
@@ -386,11 +385,11 @@ class Steam:
                         'players': [],
                         'is_solo': {
                             'group': group,
-                            'user' : user,
+                            'user': user,
                         },
                     }
                     dumpjson(steamdata, STEAM)
-                    replys.append( '已将该比赛添加至比赛缓冲池')
+                    replys.append('已将该比赛添加至比赛缓冲池')
                 if group in steamdata['subscribe_groups']:
                     replys.append('等着瞧吧（指战报）')
                 else:
@@ -411,7 +410,6 @@ class Steam:
         elif msg.startswith(ATBOT) and '今晚' in msg and ('不通宵' in msg or '养生' in msg):
             self.nosleep = 0
             return f'[CQ:at,qq={user}] 好的，今晚养生'
-
 
     def jobs(self):
         trigger = CronTrigger(minute='*', second='30')
@@ -460,11 +458,12 @@ class Steam:
             id3 = str(id64 - 76561197960265728)
             cur_game = p.get('gameextrainfo', '')
             pre_game = steamdata['players'][id3]['gameextrainfo']
-            pname    = p['personaname']
+            pname = p['personaname']
 
             # 游戏状态更新
             if cur_game == 'Dota 2':
-                steamdata['players'][id3]['last_DOTA2_action'] = max(now, steamdata['players'][id3]['last_DOTA2_action'])
+                steamdata['players'][id3]['last_DOTA2_action'] = max(now,
+                                                                     steamdata['players'][id3]['last_DOTA2_action'])
             if cur_game != pre_game:
                 minutes = (now - steamdata['players'][id3]['last_change']) // 60
                 if cur_game:
@@ -474,23 +473,29 @@ class Steam:
                         mt = f'{pname}启动了{cur_game}'
                     if datetime.now().hour < 6 and now > self.nosleep:
                         if is_jiange(id3):
-                            mt += '\n键哥是不用睡觉的,牛键哥牛'
+                            mt += '\n键哥是不用睡觉的，牛键哥牛'
                         else:
                             mt += '\n你他娘的不用睡觉吗？'
                     if datetime.now().weekday() < 5 and datetime.now().hour in range(8, 18) and now > self.nowork:
                         if is_jiange(id3):
-                            mt += '\n键哥是不用上班的,牛键哥牛'
+                            mt += '\n键哥是不用上班的，牛键哥牛'
                         else:
                             mt += '\n见鬼，这群人都不用上班的吗'
                     news.append({
                         'message': mt,
-                        'user'   : players[id64]
+                        'user': players[id64]
                     })
                 else:
-                    news.append({
-                        'message': f'{pname}退出了{pre_game}，本次游戏时长{minutes}分钟',
-                        'user'   : players[id64]
-                    })
+                    if is_jiange(id3):
+                        news.append({
+                            'message': f'{pname}退出了{pre_game}，本次游戏时长{minutes}分钟，牛键哥牛',
+                            'user': players[id64]
+                        })
+                    else:
+                        news.append({
+                            'message': f'{pname}退出了{pre_game}，本次游戏时长{minutes}分钟',
+                            'user': players[id64]
+                        })
                 steamdata['players'][id3]['gameextrainfo'] = cur_game
                 steamdata['players'][id3]['last_change'] = now
 
@@ -500,17 +505,18 @@ class Steam:
                 # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '请求最近比赛更新', id64)
                 match_id, start_time = self.dota2.get_last_match(id64)
             else:
-                match_id, start_time = (0, 0) # 将跳过之后的步骤
+                match_id, start_time = (0, 0)  # 将跳过之后的步骤
             new_match = False
             if match_id > steamdata['players'][id3]['last_DOTA2_match_id']:
                 new_match = True
-                steamdata['players'][id3]['last_DOTA2_action'] = max(start_time, steamdata['players'][id3]['last_DOTA2_action'])
+                steamdata['players'][id3]['last_DOTA2_action'] = max(start_time,
+                                                                     steamdata['players'][id3]['last_DOTA2_action'])
                 steamdata['players'][id3]['last_DOTA2_match_id'] = match_id
             if new_match:
                 match_id = str(match_id)
                 player = {
                     'personaname': pname,
-                    'steam_id3' : int(id3),
+                    'steam_id3': int(id3),
                 }
                 if steamdata['DOTA2_matches_pool'].get(match_id, 0) != 0:
                     steamdata['DOTA2_matches_pool'][match_id]['players'].append(player)
@@ -543,7 +549,7 @@ class Steam:
                             mt = '{}达到了{}{}'.format(pname, PLAYER_RANK[cur_rank // 10], cur_rank % 10 or '')
                         news.append({
                             'message': mt,
-                            'user'   : players[id64]
+                            'user': players[id64]
                         })
                         steamdata['players'][id3]['DOTA2_rank_tier'] = cur_rank
                     else:
@@ -599,7 +605,8 @@ class Steam:
                     n = f'{i:0>3}'
                     per = i / 192 * 100
                     t1 = (time.time() - t0) / i * (192 - i)
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'正在重新下载字体({per:.2f}%)，预计还需要{t1:.2f}秒', end='\r')
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'正在重新下载字体({per:.2f}%)，预计还需要{t1:.2f}秒',
+                          end='\r')
                     f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/MSYH/x{n}', timeout=10).content)
             print()
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体下载完成')
@@ -611,7 +618,8 @@ class Steam:
         total, downloaded, successful, failed = 0, 0, 0, 0
         images = []
         try:
-            images = requests.get('https://yubo65536.gitee.io/manager/assets/DOTA2_images.list', timeout=10).text.split('\n')
+            images = requests.get('https://yubo65536.gitee.io/manager/assets/DOTA2_images.list', timeout=10).text.split(
+                '\n')
             total = len(images)
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'加载图片列表成功，共有{total}条图片记录')
         except Exception as e:
@@ -622,7 +630,8 @@ class Steam:
         for img in images:
             img_OK = False
             img_path = os.path.join(IMAGES, img)
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化图片({}/{})'.format(downloaded + successful + failed + 1, total), end='\r')
+            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                  '初始化图片({}/{})'.format(downloaded + successful + failed + 1, total), end='\r')
             try:
                 cur_img = Image.open(img_path).verify()
                 img_OK = True
@@ -644,7 +653,7 @@ class Steam:
         print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'从本地读取{successful}，重新下载{downloaded}，读取/下载失败{failed}')
 
     def get_players(self):
-        steamdata  = loadjson(STEAM)
+        steamdata = loadjson(STEAM)
         players = {}
         for p in steamdata['players'].values():
             players[p['steam_id64']] = p['subscribers']
@@ -700,7 +709,8 @@ class Dota2:
             if not match.get('players'):
                 if match.get('error'):
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'OPENDOTA 返回错误信息', match['error'])
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                      '比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
                 try:
                     match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
                     match['from_valve'] = True
@@ -827,7 +837,6 @@ class Dota2:
         #     match['players'][idx]['title_position'][0] = 10
         #     match['players'][idx]['title_position'][1] += 14
 
-
     def generate_match_message(self, match_id):
         match = self.get_match(match_id)
         if not match:
@@ -864,7 +873,7 @@ class Dota2:
                     i['gpm'] = j['gold_per_min']
                     i['xpm'] = j['xp_per_min']
                     break
-        personanames = '，'.join([players[i]['personaname'] for i in range(-len(players),-1)])
+        personanames = '，'.join([players[i]['personaname'] for i in range(-len(players), -1)])
         if personanames:
             personanames += '和'
         personanames += players[-1]['personaname']
@@ -933,9 +942,9 @@ class Dota2:
                 '{}使用{}, KDA: {:.2f}[{}/{}/{}], GPM/XPM: {}/{}, ' \
                 '补刀数: {}, 总伤害: {}({:.2f}%), ' \
                 '参战率: {:.2f}%, 参葬率: {:.2f}%' \
-                .format(personaname, hero, kda, kills, deaths, assists, gpm, xpm, last_hits,
-                        damage, damage_rate,
-                        participation, deaths_rate)
+                    .format(personaname, hero, kda, kills, deaths, assists, gpm, xpm, last_hits,
+                            damage, damage_rate,
+                            participation, deaths_rate)
             )
 
         return '\n'.join(tosend)
@@ -1017,7 +1026,7 @@ class Dota2:
             team_gold = 0
             team_exp = 0
             max_mvp_point = [0, 0]
-            draw.text((50, 126 + slot * 385), SLOT[slot],         font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
+            draw.text((50, 126 + slot * 385), SLOT[slot], font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
             draw.text((50, 140 + slot * 385), SLOT_CHINESE[slot], font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
             for i in range(5):
                 idx = slot * 5 + i
@@ -1051,12 +1060,14 @@ class Dota2:
                 rank = '[{}{}] '.format(PLAYER_RANK[rank], star if star else '')
                 rank_size = font.getsize(rank)
                 draw.text((122, 167 + slot * 60 + idx * 65), rank, font=font, fill=(128, 128, 128))
-                pname = p.get('personaname') if p.get('personaname') else '匿名玩家 {}'.format(p.get('account_id') if p.get('account_id') else '')
+                pname = p.get('personaname') if p.get('personaname') else '匿名玩家 {}'.format(
+                    p.get('account_id') if p.get('account_id') else '')
                 pname_size = font.getsize(pname)
                 while rank_size[0] + pname_size[0] > 240:
                     pname = pname[:-2] + '…'
                     pname_size = font.getsize(pname)
-                draw.text((122 + rank_size[0], 167 + slot * 60 + idx * 65), pname, font=font, fill=[RADIANT_GREEN, DIRE_RED][slot])
+                draw.text((122 + rank_size[0], 167 + slot * 60 + idx * 65), pname, font=font,
+                          fill=[RADIANT_GREEN, DIRE_RED][slot])
                 pick = '第?手'
                 if match.get('picks_bans'):
                     for bp in match.get('picks_bans'):
@@ -1076,17 +1087,21 @@ class Dota2:
                 draw.text((122, 195 + slot * 60 + idx * 65), net, font=font, fill=(255, 255, 0))
                 draw.text((126 + net_size[0], 195 + slot * 60 + idx * 65), damage_to_net, font=font, fill=(0, 0, 0))
 
-                draw.text((215, 209 + slot * 60 + idx * 65), '建筑伤害: {:,}'.format(p['tower_damage']), font=font, fill=(0, 0, 0))
+                draw.text((215, 209 + slot * 60 + idx * 65), '建筑伤害: {:,}'.format(p['tower_damage']), font=font,
+                          fill=(0, 0, 0))
                 kda = '{}/{}/{} ({:.2f})'.format(
                     p['kills'], p['deaths'], p['assists'],
                     (p['kills'] + p['assists']) if p['deaths'] == 0 else (p['kills'] + p['assists']) / p['deaths']
                 )
                 draw.text((375, 167 + slot * 60 + idx * 65), kda, font=font, fill=(0, 0, 0))
-                draw.text((375, 195 + slot * 60 + idx * 65), '控制时间: {:.2f}s'.format(p['stuns']), font=font, fill=(0, 0, 0))
-                draw.text((375, 209 + slot * 60 + idx * 65), '治疗量: {:,}'.format(p['hero_healing']), font=font, fill=(0, 0, 0))
+                draw.text((375, 195 + slot * 60 + idx * 65), '控制时间: {:.2f}s'.format(p['stuns']), font=font,
+                          fill=(0, 0, 0))
+                draw.text((375, 209 + slot * 60 + idx * 65), '治疗量: {:,}'.format(p['hero_healing']), font=font,
+                          fill=(0, 0, 0))
 
                 p['title_position'] = [10, 209 + slot * 60 + idx * 65]
-                mvp_point = p['kills'] * 5 + p['assists'] * 3 + p['stuns'] * 0.5 + p['hero_damage'] * 0.001 + p['tower_damage'] * 0.01 + p['hero_healing'] * 0.002
+                mvp_point = p['kills'] * 5 + p['assists'] * 3 + p['stuns'] * 0.5 + p['hero_damage'] * 0.001 + p[
+                    'tower_damage'] * 0.01 + p['hero_healing'] * 0.002
                 if mvp_point > max_mvp_point[1]:
                     max_mvp_point = [idx, mvp_point]
                 if p['net_worth'] > max_net[1]:
@@ -1097,7 +1112,8 @@ class Dota2:
                     max_kills = [idx, p['kills'], p['hero_damage']]
                 if p['deaths'] > max_deaths[1] or (p['deaths'] == max_deaths[1] and p['net_worth'] < max_deaths[2]):
                     max_deaths = [idx, p['deaths'], p['net_worth']]
-                if p['assists'] > max_assists[1] or (p['assists'] == max_assists[1] and p['hero_damage'] > max_assists[2]):
+                if p['assists'] > max_assists[1] or (
+                        p['assists'] == max_assists[1] and p['hero_damage'] > max_assists[2]):
                     max_assists = [idx, p['assists'], p['hero_damage']]
                 if p['hero_damage'] > max_hero_damage[1]:
                     max_hero_damage = [idx, p['hero_damage']]
@@ -1110,11 +1126,12 @@ class Dota2:
                 if p['hurt'] > max_hurt[1]:
                     max_hurt = [idx, p['hurt']]
                 if (
-                    p['participation'] < min_participation[1]
+                        p['participation'] < min_participation[1]
                 ) or (
-                    p['participation'] == min_participation[1] and p['kills'] + p['assists'] < min_participation[2]
+                        p['participation'] == min_participation[1] and p['kills'] + p['assists'] < min_participation[2]
                 ) or (
-                    p['participation'] == min_participation[1] and p['kills'] + p['assists'] == min_participation[2] and p['hero_damage'] < min_participation[3]
+                        p['participation'] == min_participation[1] and p['kills'] + p['assists'] == min_participation[
+                    2] and p['hero_damage'] < min_participation[3]
                 ):
                     min_participation = [idx, p['participation'], p['kills'] + p['assists'], p['hero_damage']]
 
@@ -1166,10 +1183,14 @@ class Dota2:
                                 pl['key'] += '_'
                                 break
                         if purchase_time:
-                            draw.rectangle((475 + 42 * ITEM_SLOTS.index(item), 191 + slot * 60 + idx * 65, 514 + 42 * ITEM_SLOTS.index(item), 201 + slot * 60 + idx * 65), fill=(50, 50, 50))
+                            draw.rectangle((475 + 42 * ITEM_SLOTS.index(item), 191 + slot * 60 + idx * 65,
+                                            514 + 42 * ITEM_SLOTS.index(item), 201 + slot * 60 + idx * 65),
+                                           fill=(50, 50, 50))
                             draw.text(
                                 (479 + 42 * ITEM_SLOTS.index(item), 188 + slot * 60 + idx * 65),
-                                '{:0>2}:{:0>2}'.format(purchase_time // 60, purchase_time % 60) if purchase_time > 0 else '-{}:{:0>2}'.format(-purchase_time // 60, -purchase_time % 60),
+                                '{:0>2}:{:0>2}'.format(purchase_time // 60,
+                                                       purchase_time % 60) if purchase_time > 0 else '-{}:{:0>2}'.format(
+                                    -purchase_time // 60, -purchase_time % 60),
                                 font=font, fill=(192, 192, 192)
                             )
                 for buff in p['permanent_buffs']:
@@ -1179,22 +1200,25 @@ class Dota2:
                         shard = 1
                 scepter_img = self.get_image(f'scepter_{scepter}.png')
                 scepter_img = scepter_img.resize((20, 20), Image.ANTIALIAS)
-                image.paste(scepter_img, (770 , 170 + slot * 60 + idx * 65))
+                image.paste(scepter_img, (770, 170 + slot * 60 + idx * 65))
                 shard_img = self.get_image(f'shard_{shard}.png')
                 shard_img = shard_img.resize((20, 11), Image.ANTIALIAS)
-                image.paste(shard_img, (770 , 190 + slot * 60 + idx * 65))
+                image.paste(shard_img, (770, 190 + slot * 60 + idx * 65))
 
             for i in range(4):
-                draw.rectangle((0, 228 + slot * 385 + i * 65, 800,  228 + slot * 385 + i * 65), (225, 225, 225))
+                draw.rectangle((0, 228 + slot * 385 + i * 65, 800, 228 + slot * 385 + i * 65), (225, 225, 225))
 
             for i in range(5):
                 idx = slot * 5 + i
                 p = match['players'][idx]
                 damage_rate = 0 if team_damage == 0 else 100 * (p['hero_damage'] / team_damage)
                 damage_received_rate = 0 if team_damage_received == 0 else 100 * (p['hurt'] / team_damage_received)
-                draw.text((215, 181 + slot * 60 + idx * 65), '造成伤害: {:,} ({:.2f}%)'.format(p['hero_damage'], damage_rate), font=font, fill=(0, 0, 0))
-                draw.text((215, 195 + slot * 60 + idx * 65), '承受伤害: {:,} ({:.2f}%)'.format(p['hurt'], damage_received_rate), font=font, fill=(0, 0, 0))
-                draw.text((375, 181 + slot * 60 + idx * 65), '参战率: {:.2f}%'.format(p['participation']), font=font, fill=(0, 0, 0))
+                draw.text((215, 181 + slot * 60 + idx * 65),
+                          '造成伤害: {:,} ({:.2f}%)'.format(p['hero_damage'], damage_rate), font=font, fill=(0, 0, 0))
+                draw.text((215, 195 + slot * 60 + idx * 65),
+                          '承受伤害: {:,} ({:.2f}%)'.format(p['hurt'], damage_received_rate), font=font, fill=(0, 0, 0))
+                draw.text((375, 181 + slot * 60 + idx * 65), '参战率: {:.2f}%'.format(p['participation']), font=font,
+                          fill=(0, 0, 0))
 
             if slot == winner:
                 self.draw_title(match, draw, font, max_mvp_point, 'MVP', (255, 127, 39))
@@ -1289,7 +1313,7 @@ class Dota2:
                             reports.append(
                                 {
                                     'message': m,
-                                    'user' : match_info['subscribers'],
+                                    'user': match_info['subscribers'],
                                 }
                             )
                     todelete.append(match_id)
