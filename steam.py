@@ -1016,6 +1016,7 @@ class Dota2:
         max_stuns = [0, 0]
         max_healing = [0, 0]
         max_hurt = [0, 0]
+        jian_zai_bi_de = [0, 0]
         min_participation = [0, 999, 999, 999999]
         for slot in range(0, 2):
             team_damage = 0
@@ -1104,6 +1105,8 @@ class Dota2:
                     'tower_damage'] * 0.01 + p['hero_healing'] * 0.002
                 if mvp_point > max_mvp_point[1]:
                     max_mvp_point = [idx, mvp_point]
+                if p['account_id'] == 191299708:
+                    jian_zai_bi_de = [idx, 1]
                 if p['net_worth'] > max_net[1]:
                     max_net = [idx, p['net_worth']]
                 if p['xp_per_min'] > max_xpm[1]:
@@ -1234,6 +1237,8 @@ class Dota2:
             draw.text((636, 142 + slot * 385), f'{team_gold}', font=font, fill=(128, 128, 128))
             draw.text((726, 142 + slot * 385), f'{team_exp}', font=font, fill=(128, 128, 128))
 
+        if jian_zai_bi_de[1] > 0:
+            self.draw_title(match, draw, font, jian_zai_bi_de, '键在必得冠名', (255, 127, 39))
         if max_net[1] > 0:
             self.draw_title(match, draw, font, max_net, '富', (255, 192, 30))
         if max_xpm[1] > 0:
