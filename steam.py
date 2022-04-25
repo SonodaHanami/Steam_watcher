@@ -1050,6 +1050,9 @@ class Dota2:
                 draw.text((71 - level_size[0], 190 + slot * 60 + idx * 65), level, font=font, fill=(255, 255, 255))
                 rank = p.get('rank_tier') if p.get('rank_tier') else 0
                 rank, star = rank // 10, rank % 10
+                if p['account_id'] == 191299708:
+                    rank = 8
+                    star = 0
                 rank_img = self.get_image(f'rank_icon_{rank}.png')
                 if star:
                     rank_star = self.get_image(f'rank_star_{star}.png')
@@ -1238,7 +1241,7 @@ class Dota2:
             draw.text((726, 142 + slot * 385), f'{team_exp}', font=font, fill=(128, 128, 128))
 
         if jian_zai_bi_de[1] > 0:
-            self.draw_title(match, draw, font, jian_zai_bi_de, '键在必得冠名', (255, 127, 39))
+            self.draw_title(match, draw, font, jian_zai_bi_de, '键', (255, 127, 39))
         if max_net[1] > 0:
             self.draw_title(match, draw, font, max_net, '富', (255, 192, 30))
         if max_xpm[1] > 0:
