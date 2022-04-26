@@ -38,17 +38,15 @@ DEFAULT_DATA = {
     'subscribers': {},
 }
 
+MAGIC = 76561197960265728
+JIANGE_ID = '191299708'
 
 def IdHash(id3: int):
-    return id3 + 76561197960265728
+    return id3 + MAGIC
 
 
 def is_jiange(id):
-    if id == '191299708':
-        return True
-    else:
-        return False
-
+    return str(id) == JIANGE_ID
 
 class Steam:
     Passive = True
@@ -117,8 +115,8 @@ class Steam:
                     group_id=message['group_id'],
                     message=f'正在尝试绑定并初始化玩家信息',
                 )
-                if id3 > 76561197960265728:
-                    id3 -= 76561197960265728
+                if id3 > MAGIC:
+                    id3 -= MAGIC
                 id64 = IdHash(id3)
                 id3 = str(id3)
                 steamdata = loadjson(STEAM)
@@ -455,7 +453,7 @@ class Steam:
             j = {'response': {'players': []}}
         for p in j['response']['players']:
             id64 = int(p['steamid'])
-            id3 = str(id64 - 76561197960265728)
+            id3 = str(id64 - MAGIC)
             cur_game = p.get('gameextrainfo', '')
             pre_game = steamdata['players'][id3]['gameextrainfo']
             pname = p['personaname']
@@ -847,7 +845,6 @@ class Dota2:
         players = steamdata['DOTA2_matches_pool'][match_id]['players']
         start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(match['start_time']))
         duration = match['duration']
-        jiange = False
 
         # 比赛模式
         mode_id = match['game_mode']
@@ -890,36 +887,8 @@ class Dota2:
                 team_damage += i['hero_damage']
                 team_deaths += i['deaths']
 
-        top_kda = 0
-        for i in players:
-            if i['kda'] > top_kda:
-                top_kda = i['kda']
-
-        if (win and top_kda > 5) or (not win and top_kda > 3):
-            positive = True
-        elif (win and top_kda < 2) or (not win and top_kda < 1):
-            positive = False
-        else:
-            if random.randint(0, 1) == 0:
-                positive = True
-            else:
-                positive = False
-
         tosend = []
-        if jiange:
-            if win:
-                tosend.append(random.choice(WIN_JIANGE).format(personanames))
-            else:
-                tosend.append(random.choice(LOSE_JIANGE).format(personanames))
-        else:
-            if win and positive:
-                tosend.append(random.choice(WIN_POSITIVE).format(personanames))
-            elif win and not positive:
-                tosend.append(random.choice(WIN_NEGATIVE).format(personanames))
-            elif not win and positive:
-                tosend.append(random.choice(LOSE_POSITIVE).format(personanames))
-            else:
-                tosend.append(random.choice(LOSE_NEGATIVE).format(personanames))
+        EVALUATION_LIST = [[LOSE_NEGATIVE, LOSE_POSITIVE], [WIN_NEGATIVE, WIN_POSITIVE]]
 
         tosend.append('开始时间: {}'.format(start_time))
         tosend.append('持续时间: {:.0f}分{:.0f}秒'.format(duration / 60, duration % 60))
@@ -938,15 +907,26 @@ class Dota2:
             participation = 0 if team_score == 0 else (100 * (kills + assists) / team_score)
             deaths_rate = 0 if team_deaths == 0 else (100 * deaths / team_deaths)
 
-            tosend.append(
-                '{}使用{}, KDA: {:.2f}[{}/{}/{}], GPM/XPM: {}/{}, ' \
-                '补刀数: {}, 总伤害: {}({:.2f}%), ' \
-                '参战率: {:.2f}%, 参葬率: {:.2f}%' \
-                    .format(personaname, hero, kda, kills, deaths, assists, gpm, xpm, last_hits,
-                            damage, damage_rate,
-                            participation, deaths_rate)
-            )
+            if is_jiange(i['steam_id3']):
+                evaluation = WIN_JIANGE if win else LOSE_JIANGE
+            else:
+                if kda >= (5.0 if win else 3.0):
+                    positive = 1
+                elif kda <= (2.0 if win else 1.0):
+                    positive = 0
+                else:
+                    positive = random.randint(0,1)
+                evaluation = EVALUATION_LIST[int(win)][positive]
 
+            evaluation_str = random.choice(evaluation).format('{}使用{}'.format(personaname, hero))
+            data_detail = 'KDA: {:.2f}[{}/{}/{}], GPM/XPM: {}/{}, '  \
+                          '补刀数: {}, 总伤害: {}({:.2f}%), '         \
+                          '参战率: {:.2f}%, 参葬率: {:.2f}%'          \
+                          .format(kda, kills, deaths, assists, gpm, xpm,
+                              last_hits, damage, damage_rate,
+                              participation, deaths_rate)
+
+            tosend.append(''.join(evaluation_str, data_detail))
         return '\n'.join(tosend)
 
     def generate_match_image(self, match_id):
