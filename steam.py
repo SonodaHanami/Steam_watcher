@@ -326,18 +326,25 @@ class Steam:
             try:
                 match_id = str(int(prm[1]))
                 steamdata = loadjson(STEAM)
+                replys = []
                 if steamdata['DOTA2_matches_pool'].get(match_id, 0) != 0:
-                    return f'比赛{match_id}已在比赛缓冲池中，战报将稍后发出'
-                steamdata['DOTA2_matches_pool'][match_id] = {
-                    'request_attempts': 0,
-                    'players': [],
-                    'is_solo': {
-                        'group': group,
-                        'user' : user,
-                    },
-                }
-                dumpjson(steamdata, STEAM)
-                return f'已将比赛{match_id}添加至比赛缓冲池，战报将稍后发出'
+                    replys.append(f'比赛{match_id}已在比赛缓冲池中')
+                else:
+                    steamdata['DOTA2_matches_pool'][match_id] = {
+                        'request_attempts': 0,
+                        'players': [],
+                        'is_solo': {
+                            'group': group,
+                            'user' : user,
+                        },
+                    }
+                    dumpjson(steamdata, STEAM)
+                    replys.append(f'已将比赛{match_id}添加至比赛缓冲池')
+                if group in steamdata['subscribe_groups']:
+                    replys.append('战报将稍后发出')
+                else:
+                    replys.append('但是因为本群未订阅Steam所以不会发出来')
+                return '，'.join(replys)
             except Exception as e:
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'查询战报失败', e)
                 return usage
@@ -378,7 +385,7 @@ class Steam:
                         },
                     }
                     dumpjson(steamdata, STEAM)
-                    replys.append( '已将该比赛添加至比赛缓冲池')
+                    replys.append('已将该比赛添加至比赛缓冲池')
                 if group in steamdata['subscribe_groups']:
                     replys.append('等着瞧吧（指战报）')
                 else:
@@ -733,13 +740,17 @@ class Dota2:
                 except requests.exceptions.RequestException as e:
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_REQUEST', e)
                     return {}
-                job_id = j['job']['jobId']
-                print(
-                    datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
-                    '比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(match_id, attempts, job_id)
-                )
+                job_id = j['job'].get('jobId', -1)
+                if job_id == -1:
+                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 请求job_id失败'.format(match_id))
+                else:
+                    print(
+                        datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                        '比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(match_id, attempts, job_id)
+                    )
+                    if match_id in steamdata['DOTA2_matches_pool']:
+                        steamdata['DOTA2_matches_pool'][match_id]['job_id'] = job_id
                 if match_id in steamdata['DOTA2_matches_pool']:
-                    steamdata['DOTA2_matches_pool'][match_id]['job_id'] = job_id
                     dumpjson(steamdata, STEAM)
                 return {}
         else:
@@ -828,6 +839,7 @@ class Dota2:
         lobby = LOBBY[lobby_id] if lobby_id in LOBBY else '未知'
         # 更新玩家对象的比赛信息
         for i in players:
+            i['ok'] = False
             for j in match['players']:
                 if i['steam_id3'] == j['account_id']:
                     i['dota2_kill'] = j['kills']
@@ -841,7 +853,10 @@ class Dota2:
                     i['damage'] = j['hero_damage']
                     i['gpm'] = j['gold_per_min']
                     i['xpm'] = j['xp_per_min']
+                    i['ok'] = True
                     break
+        if False in [i['ok'] for i in players]:
+            return '刀雷动，但是摆烂，因为有人的ID不见了，我不说是谁🙄'
         personanames = '，'.join([players[i]['personaname'] for i in range(-len(players),-1)])
         if personanames:
             personanames += '和'
