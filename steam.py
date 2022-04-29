@@ -880,25 +880,25 @@ class Dota2:
                 top_kda = i['kda']
 
         if (win and top_kda > 5) or (not win and top_kda > 3):
-            postive = True
+            positive = True
         elif (win and top_kda < 2) or (not win and top_kda < 1):
-            postive = False
+            positive = False
         else:
             if random.randint(0, 1) == 0:
-                postive = True
+                positive = True
             else:
-                postive = False
+                positive = False
 
         # 刀刀雷达动叻！
         if CONFIG.get('ONE_LINE_MODE', False):
             return '刀雷动！{}直接进行一个比赛的{}'.format(personanames, '赢' if win else '输')
         tosend = []
-        if win and postive:
-            tosend.append(random.choice(WIN_POSTIVE).format(personanames))
-        elif win and not postive:
+        if win and positive:
+            tosend.append(random.choice(WIN_POSITIVE).format(personanames))
+        elif win and not positive:
             tosend.append(random.choice(WIN_NEGATIVE).format(personanames))
-        elif not win and postive:
-            tosend.append(random.choice(LOSE_POSTIVE).format(personanames))
+        elif not win and positive:
+            tosend.append(random.choice(LOSE_POSITIVE).format(personanames))
         else:
             tosend.append(random.choice(LOSE_NEGATIVE).format(personanames))
 
