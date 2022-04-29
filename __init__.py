@@ -10,6 +10,7 @@ default_config = {
     'ADMIN': '',
     'BOT': '',
     'STEAM_APIKEY': '',
+    'ONE_LINE_MODE': False,
 }
 
 config_path = os.path.join(

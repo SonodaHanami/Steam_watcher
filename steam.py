@@ -869,6 +869,9 @@ class Dota2:
             else:
                 postive = False
 
+        # 刀刀雷达动叻！
+        if CONFIG.get('ONE_LINE_MODE', False):
+            return '刀雷动！{}直接进行一个比赛的{}'.format(personanames, '赢' if win else '输')
         tosend = []
         if win and postive:
             tosend.append(random.choice(WIN_POSTIVE).format(personanames))
