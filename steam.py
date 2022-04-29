@@ -790,6 +790,8 @@ class Dota2:
             player['lane_role'] = 0
         if not player.get('permanent_buffs'):
             player['permanent_buffs'] = {}
+        if not player.get('has_bkb'):
+            player['has_bkb'] = False
 
     def draw_title(self, match, draw, font, item, title, color):
         idx = item[0]
@@ -802,6 +804,9 @@ class Dota2:
         # if match['players'][idx]['title_position'][0] > 195:
         #     match['players'][idx]['title_position'][0] = 10
         #     match['players'][idx]['title_position'][1] += 14
+
+    def draw_slogan(self, match, draw, font, idx, title, color):
+        draw.text((474, 202 + (idx // 5) * 60 + idx * 65), title, font=font, fill=color)
 
 
     def generate_match_message(self, match_id):
@@ -978,6 +983,8 @@ class Dota2:
         max_healing = [0, 0]
         max_hurt = [0, 0]
         min_participation = [0, 999, 999, 999999]
+        avg_gold = [0, 0]
+
         for slot in range(0, 2):
             team_damage = 0
             team_damage_received = 0
@@ -1092,6 +1099,10 @@ class Dota2:
                 shard = 0
                 image.paste(Image.new('RGB', (252, 32), (192, 192, 192)), (474, 171 + slot * 60 + idx * 65))
                 p['purchase_log'].reverse()
+                for pl in p['purchase_log']:
+                    if pl['key'] == ITEMS.get(116): # BKB
+                        p['has_bkb'] = True
+                        break
                 for item in ITEM_SLOTS:
                     if p[item] == 0:
                         item_img = Image.new('RGB', (40, 30), (128, 128, 128))
@@ -1180,6 +1191,8 @@ class Dota2:
             draw.text((636, 142 + slot * 385), f'{team_gold}', font=font, fill=(128, 128, 128))
             draw.text((726, 142 + slot * 385), f'{team_exp}', font=font, fill=(128, 128, 128))
 
+            avg_gold[slot] = team_gold / 5
+
         if max_net[1] > 0:
             self.draw_title(match, draw, font, max_net, '富', (255, 192, 30))
         if max_xpm[1] > 0:
@@ -1202,7 +1215,45 @@ class Dota2:
             self.draw_title(match, draw, font, max_hurt, '耐', (112, 146, 190))
         if min_participation[1] < 999:
             self.draw_title(match, draw, font, min_participation, '摸', (200, 190, 230))
-
+        if CONFIG.get('BKB_RECOMMENDED', False):
+            for slot in range(0, 2):
+                safe_has_bkb = False
+                mid_has_bkb = False
+                safe = (0, None)
+                for i in range(5):
+                    idx = slot * 5 + i
+                    p = match['players'][idx]
+                    if p['lane_role'] == 1 and p['net_worth'] > safe[0]:
+                        safe = (p['net_worth'], idx)
+                for i in range(5):
+                    idx = slot * 5 + i
+                    p = match['players'][idx]
+                    # if p['lane_role'] == 1 and p['net_worth'] >= avg_gold[slot]: # 一号位
+                    if idx == safe[1]: # 一号位
+                        p['is_safe'] = True
+                        if p['has_bkb']:
+                            safe_has_bkb = True
+                        if p['net_worth'] >= 12000 and not p['has_bkb']:
+                            if p['deaths'] / team_deaths >= 0.2:
+                                self.draw_slogan(match, draw, font, idx, '打大哥不出BKB死了{}次你有什么头绪吗？'.format(p['deaths']), (255, 0, 0))
+                            else:
+                                self.draw_slogan(match, draw, font2, idx, '打大哥不出BKB？', (255, 0, 0))
+                    if p['lane_role'] == 2: # 二号位
+                        p['is_mid'] = True
+                        if p['has_bkb']:
+                            mid_has_bkb = True
+                        if p['net_worth'] >= 12000 and not p['has_bkb']:
+                            if p['deaths'] / team_deaths >= 0.2:
+                                self.draw_slogan(match, draw, font, idx, '打中单不出BKB死了{}次你有什么头绪吗？'.format(p['deaths']), (255, 0, 0))
+                            else:
+                                self.draw_slogan(match, draw, font2, idx, '打中单不出BKB？', (255, 0, 0))
+                for i in range(5):
+                    idx = slot * 5 + i
+                    p = match['players'][idx]
+                    if not p.get('is_safe') and not p.get('is_mid'): # 三四五
+                        if p['net_worth'] >= 10000:
+                            if not safe_has_bkb and not mid_has_bkb and p['has_bkb']:
+                                self.draw_slogan(match, draw, font2, idx, 'BKB！你出得好哇！', (255, 0, 0))
         draw.text(
             (10, 880),
             '※录像分析数据来自opendota.com，DOTA2游戏图片素材版权归Valve所有',

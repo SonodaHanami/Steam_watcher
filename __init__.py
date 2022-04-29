@@ -11,6 +11,7 @@ default_config = {
     'BOT': '',
     'STEAM_APIKEY': '',
     'ONE_LINE_MODE': False,
+    'BKB_RECOMMENDED': False,
 }
 
 config_path = os.path.join(
