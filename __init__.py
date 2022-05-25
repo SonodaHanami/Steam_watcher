@@ -12,6 +12,7 @@ default_config = {
     'STEAM_APIKEY': '',
     'ONE_LINE_MODE': False,
     'BKB_RECOMMENDED': False,
+    'BASE64_IMAGE': True,
 }
 
 config_path = os.path.join(

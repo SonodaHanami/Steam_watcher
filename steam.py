@@ -1297,9 +1297,11 @@ class Dota2:
                     else:
                         self.generate_match_image(match_id)
                         m = '[CQ:at,qq={}] 你点的比赛战报来了！'.format(match_info['is_solo']['user'])
-                        decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
-                        m += '\n[CQ:image,file=base64://{}]'.format(decoded)
-                        # m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
+                        if CONFIG.get('BASE64_IMAGE', True) != False:
+                            decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
+                            m += '\n[CQ:image,file=base64://{}]'.format(decoded)
+                        else:
+                            m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
                     reports.append(
                         {
                             'message': m,
@@ -1324,9 +1326,11 @@ class Dota2:
                         m = self.generate_match_message(match_id)
                         if isinstance(m, str):
                             self.generate_match_image(match_id)
-                            decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
-                            m += '\n[CQ:image,file=base64://{}]'.format(decoded)
-                            # m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
+                            if CONFIG.get('BASE64_IMAGE', True) != False:
+                                decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
+                                m += '\n[CQ:image,file=base64://{}]'.format(decoded)
+                            else:
+                                m += '\n[CQ:image,file=file:///{}]'.format(os.path.join(DOTA2_MATCHES, f'{match_id}.png'))
                             reports.append(
                                 {
                                     'message': m,
