@@ -677,10 +677,9 @@ class Dota2:
             except requests.exceptions.RequestException as e:
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_MATCHES', e)
                 raise
-            if match_id in steamdata['DOTA2_matches_pool']:
-                if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
-                    match = {}
+            if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
+                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
+                match = {}
             if not match.get('players'):
                 if match.get('error'):
                     print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'OPENDOTA 返回错误信息', match['error'])
@@ -702,18 +701,14 @@ class Dota2:
                 return match
             received = match['players'][0].get('damage_inflictor_received', None)
         except Exception as e:
-            attempts = ''
-            if match_id in steamdata['DOTA2_matches_pool']:
-                steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] += 1
-                attempts = '（第{}次）'.format(steamdata['DOTA2_matches_pool'][match_id]['request_attempts'])
+            steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] += 1
+            attempts = '（第{}次）'.format(steamdata['DOTA2_matches_pool'][match_id]['request_attempts'])
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id, attempts, e)
             dumpjson(steamdata, STEAM)
             return {}
         if received is None and not match.get('from_valve'):
             # 比赛分析结果不完整
-            job_id = None
-            if match_id in steamdata['DOTA2_matches_pool']:
-                job_id = steamdata['DOTA2_matches_pool'][match_id].get('job_id')
+            job_id = steamdata['DOTA2_matches_pool'][match_id].get('job_id')
             if job_id:
                 # 存在之前请求分析的job_id，则查询这个job是否已完成
                 try:
@@ -732,10 +727,8 @@ class Dota2:
                     return {}
             else:
                 # 不存在之前请求分析的job_id，重新请求一次，保存，下次再确认这个job是否已完成
-                attempts = ''
-                if match_id in steamdata['DOTA2_matches_pool']:
-                    steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] += 1
-                    attempts = '（第{}次）'.format(steamdata['DOTA2_matches_pool'][match_id]['request_attempts'])
+                steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] += 1
+                attempts = '（第{}次）'.format(steamdata['DOTA2_matches_pool'][match_id]['request_attempts'])
                 try:
                     j = requests.post(OPENDOTA_REQUEST.format(match_id), timeout=10).json()
                 except requests.exceptions.RequestException as e:
@@ -749,10 +742,8 @@ class Dota2:
                         datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
                         '比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(match_id, attempts, job_id)
                     )
-                    if match_id in steamdata['DOTA2_matches_pool']:
-                        steamdata['DOTA2_matches_pool'][match_id]['job_id'] = job_id
-                if match_id in steamdata['DOTA2_matches_pool']:
-                    dumpjson(steamdata, STEAM)
+                    steamdata['DOTA2_matches_pool'][match_id]['job_id'] = job_id
+                dumpjson(steamdata, STEAM)
                 return {}
         else:
             if match.get('from_valve'):
@@ -761,12 +752,11 @@ class Dota2:
             else:
                 # 比赛分析结果完整了
                 print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取到分析结果'.format(match_id))
-            if match_id in steamdata['DOTA2_matches_pool']:
-                for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
-                    for pm in match['players']:
-                        if pp['steam_id3'] == pm['account_id']:
-                            pm['personaname'] = pp['personaname']
-                            break
+            for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
+                for pm in match['players']:
+                    if pp['steam_id3'] == pm['account_id']:
+                        pm['personaname'] = pp['personaname']
+                        break
             dumpjson(match, MATCH)
             return match
 
