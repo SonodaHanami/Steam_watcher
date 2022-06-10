@@ -459,6 +459,11 @@ class Steam:
         返回最新消息
         '''
         news = []
+        news_details = {
+            'steam_status': 0,
+            'dota2_rank':   0,
+            'match_report': 0,
+        }
         memberdata = loadjson(MEMBER)
         steamdata = loadjson(STEAM)
         players = self.get_players()
@@ -502,6 +507,7 @@ class Steam:
                         'message': f'{pname}退出了{pre_game}，本次游戏时长{minutes}分钟',
                         'user'   : players[id64]
                     })
+                news_details['steam_status'] += 1
                 steamdata['players'][id3]['gameextrainfo'] = cur_game
                 steamdata['players'][id3]['last_change'] = now
 
@@ -556,16 +562,27 @@ class Steam:
                             'message': mt,
                             'user'   : players[id64]
                         })
+                        news_details['dota2_rank'] += 1
                         steamdata['players'][id3]['DOTA2_rank_tier'] = cur_rank
                     else:
                         pass
 
         dumpjson(steamdata, STEAM)
 
-        news += self.dota2.get_matches_report()
+        match_report = self.dota2.get_matches_report()
+        news += match_report
+        news_details['match_report'] += len(match_report)
+
+        for k in list(news_details.keys()):
+            if news_details[k] == 0:
+                del news_details[k]
 
         if len(news) > 0:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'Steam雷达扫描到了{len(news)}个新事件')
+            print(
+                datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+                f'Steam雷达扫描到了{len(news)}个新事件',
+                str(news_details)
+            )
 
         for msg in news:
             if msg.get('target_groups', 0) == 0:
