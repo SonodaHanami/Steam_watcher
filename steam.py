@@ -605,7 +605,7 @@ class Steam:
                 for f in os.listdir(self.YOBOT_OUTPUT):
                     size += os.path.getsize(os.path.join(self.YOBOT_OUTPUT, f))
                     os.remove(os.path.join(self.YOBOT_OUTPUT, f))
-            logger.info('清理完成，删除了{}个文件，size={}'.format(cnt, size))
+            logger.info('清理完成，删除了{}个文件，size={:,}'.format(cnt, size))
         except Exception as e:
             logger.warning(f'清理失败 {e}')
 
