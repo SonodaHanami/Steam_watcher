@@ -571,9 +571,9 @@ class Steam:
 
         dumpjson(steamdata, STEAM)
 
-        match_report = self.dota2.get_matches_report()
-        news += match_report
-        news_details['match_report'] += len(match_report)
+        match_reports = self.dota2.get_match_reports()
+        news += match_reports
+        news_details['match_report'] += len(match_reports)
 
         for k in list(news_details.keys()):
             if news_details[k] == 0:
@@ -1324,7 +1324,7 @@ class Dota2:
 
         logger.info('比赛编号 {} 生成战报图片'.format(match_id))
 
-    def get_matches_report(self):
+    def get_match_reports(self):
         steamdata = loadjson(STEAM)
         reports = []
         todelete = []
