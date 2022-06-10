@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timedelta
 from apscheduler.triggers.cron import CronTrigger
 from PIL import Image, ImageDraw, ImageFont
+from urllib.parse import urljoin
 
 from . import whois
 from .DOTA2_dicts import *
@@ -17,9 +18,11 @@ CONFIG = load_config()
 APIKEY = CONFIG['STEAM_APIKEY']
 BOT = CONFIG['BOT']
 ATBOT = f'[CQ:at,qq={BOT}]'
+IMAGE_MODE = CONFIG.get('IMAGE_MODE')
 UNKNOWN = None
 IDK = '我不知道'
 MAX_ATTEMPTS = 5
+
 MEMBER = os.path.expanduser('~/.Steam_watcher/member.json')
 STEAM  = os.path.expanduser('~/.Steam_watcher/steam.json')
 IMAGES = os.path.expanduser('~/.Steam_watcher/images/')
@@ -47,18 +50,42 @@ class Steam:
     def __init__(self, **kwargs):
         print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam 开始！')
 
+        self.setting = kwargs['glo_setting']
         self.api = kwargs['bot_api']
         self.whois = whois.Whois(**kwargs)
-        self.dota2 = Dota2()
         self.MINUTE = random.randint(0, 59)
         self.nowork = 0
         self.nosleep = 0
 
-        mkdir_if_not_exists(DOTA2_MATCHES)
         self.init_fonts()
         self.init_images()
         if not os.path.exists(STEAM):
             dumpjson(DEFAULT_DATA, STEAM)
+
+        # 图片传输方式
+        if IMAGE_MODE == 'YOBOT_OUTPUT':
+            self.YOBOT_OUTPUT = os.path.join(self.setting['dirname'], 'output/DOTA2_matches/')
+            self.IMAGE_URL = urljoin(
+                self.setting['public_address'],
+                '{}{}'.format(self.setting['public_basepath'], 'output/DOTA2_matches/{}.png')
+            )
+            mkdir_if_not_exists(self.YOBOT_OUTPUT)
+            self.setting.update({
+                'image_mode': IMAGE_MODE,
+                'output_path': self.YOBOT_OUTPUT,
+                'image_url': self.IMAGE_URL,
+            })
+        elif IMAGE_MODE == 'BASE64_IMAGE':
+            self.setting.update({
+                'image_mode': IMAGE_MODE,
+            })
+        else:
+            self.setting.update({
+                'image_mode': 'ORIGINAL_PNG',
+            })
+        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '图片传输方式为', self.setting['image_mode'])
+
+        self.dota2 = Dota2(**kwargs)
 
         print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam 完成！MINUTE={}'.format(self.MINUTE))
 
@@ -553,11 +580,16 @@ class Steam:
     def clear_matches(self):
         print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理本地保存的比赛分析数据和战报图片')
         try:
-            cnt = len(os.listdir(DOTA2_MATCHES))
             size = 0
+            cnt = len(os.listdir(DOTA2_MATCHES))
             for f in os.listdir(DOTA2_MATCHES):
                 size += os.path.getsize(os.path.join(DOTA2_MATCHES, f))
                 os.remove(os.path.join(DOTA2_MATCHES, f))
+            if IMAGE_MODE == 'YOBOT_OUTPUT':
+                cnt += len(os.listdir(self.YOBOT_OUTPUT))
+                for f in os.listdir(self.YOBOT_OUTPUT):
+                    size += os.path.getsize(os.path.join(self.YOBOT_OUTPUT, f))
+                    os.remove(os.path.join(self.YOBOT_OUTPUT, f))
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理完成，删除了{}个文件，size={}'.format(cnt, size))
         except Exception as e:
             print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理失败', e)
@@ -636,6 +668,13 @@ class Steam:
 
 
 class Dota2:
+    def __init__(self, **kwargs):
+        self.setting = kwargs['glo_setting']
+        self.IMAGE_MODE = self.setting['image_mode']
+        if self.IMAGE_MODE == 'YOBOT_OUTPUT':
+            self.YOBOT_OUTPUT = self.setting['output_path']
+            self.IMAGE_URL = self.setting['image_url']
+
     @staticmethod
     def get_last_match(id64):
         try:
@@ -1266,7 +1305,11 @@ class Dota2:
             font=font,
             fill=(128, 128, 128)
         )
-        image.save(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'png')
+        if self.IMAGE_MODE == 'YOBOT_OUTPUT':
+            image.save(os.path.join(self.YOBOT_OUTPUT, f'{match_id}.png'), 'png')
+        else:
+            image.save(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'png')
+
         print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 生成战报图片'.format(match_id))
 
     def get_matches_report(self):
@@ -1287,7 +1330,9 @@ class Dota2:
                     else:
                         self.generate_match_image(match_id)
                         m = '[CQ:at,qq={}] 你点的比赛战报来了！'.format(match_info['is_solo']['user'])
-                        if CONFIG.get('BASE64_IMAGE', True) != False:
+                        if self.IMAGE_MODE == 'YOBOT_OUTPUT':
+                            m += '\n[CQ:image,file={}]'.format(self.IMAGE_URL.format(match_id))
+                        elif self.IMAGE_MODE == 'BASE64_IMAGE':
                             decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
                             m += '\n[CQ:image,file=base64://{}]'.format(decoded)
                         else:
@@ -1316,7 +1361,9 @@ class Dota2:
                         m = self.generate_match_message(match_id)
                         if isinstance(m, str):
                             self.generate_match_image(match_id)
-                            if CONFIG.get('BASE64_IMAGE', True) != False:
+                            if self.IMAGE_MODE == 'YOBOT_OUTPUT':
+                                m += '\n[CQ:image,file={}]'.format(self.IMAGE_URL.format(match_id))
+                            elif self.IMAGE_MODE == 'BASE64_IMAGE':
                                 decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
                                 m += '\n[CQ:image,file=base64://{}]'.format(decoded)
                             else:
