@@ -7,6 +7,7 @@ import sys
 from datetime import datetime, timedelta
 from .utils import *
 
+logger = get_logger('Steam_watcher')
 
 CONFIG = load_config()
 BOT = CONFIG['BOT']
@@ -21,7 +22,7 @@ DEFAULT_DATA = {}
 
 class Whois:
     def __init__(self, **kwargs):
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Whois')
+        logger.info('初始化Whois')
 
         if not os.path.exists(MEMBER):
             dumpjson(DEFAULT_DATA, MEMBER)

@@ -14,6 +14,8 @@ from . import whois
 from .DOTA2_dicts import *
 from .utils import *
 
+logger = get_logger('Steam_watcher')
+
 CONFIG = load_config()
 APIKEY = CONFIG['STEAM_APIKEY']
 BOT = CONFIG['BOT']
@@ -48,7 +50,7 @@ class Steam:
     Request = False
 
     def __init__(self, **kwargs):
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam 开始！')
+        logger.info('初始化Steam 开始！')
 
         self.setting = kwargs['glo_setting']
         self.api = kwargs['bot_api']
@@ -83,11 +85,11 @@ class Steam:
             self.setting.update({
                 'image_mode': 'ORIGINAL_PNG',
             })
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '图片传输方式为', self.setting['image_mode'])
+        logger.info('图片传输方式为{}'.format(self.setting['image_mode']))
 
         self.dota2 = Dota2(**kwargs)
 
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化Steam 完成！MINUTE={}'.format(self.MINUTE))
+        logger.info('初始化Steam 完成！MINUTE={}'.format(self.MINUTE))
 
 
     async def execute_async(self, func_num, message):
@@ -161,7 +163,7 @@ class Steam:
                         try:
                             j = requests.get(PLAYER_SUMMARY.format(APIKEY, id64), timeout=10).json()
                         except requests.exceptions.RequestException as e:
-                            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale PLAYER_SUMMARY', e)
+                            logger.warning(f'kale PLAYER_SUMMARY {e}')
                             success += '\nkale'
                             raise
                         p = j['response']['players'][0]
@@ -188,7 +190,7 @@ class Steam:
                         success += '\n{}，{}，{}'.format(s1, s2, s3)
                     except Exception as e:
                         success += '\n初始化玩家信息失败'
-                        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化玩家信息失败', e)
+                        logger.warning(f'初始化玩家信息失败 {e}')
                     steamdata['players'][id3] = {
                         'steam_id64': id64,
                         'subscribers': [user],
@@ -246,7 +248,7 @@ class Steam:
             try:
                 j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids), timeout=10).json()
             except requests.exceptions.RequestException as e:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale PLAYER_SUMMARY', e)
+                logger.warning(f'kale PLAYER_SUMMARY {e}')
                 return 'kale，请稍后再试'
             for p in j['response']['players']:
                 if p.get('gameextrainfo'):
@@ -318,7 +320,7 @@ class Steam:
             try:
                 j = requests.get(OPENDOTA_PLAYERS.format(id3) + '/heroes', timeout=10).json()
             except requests.exceptions.RequestException as e:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_PLAYERS', e)
+                logger.warning(f'kale OPENDOTA_PLAYERS {e}')
                 return 'kale，请稍后再试'
             if item == '常用英雄':
                 hero_stat = []
@@ -374,7 +376,7 @@ class Steam:
                     replys.append('但是因为本群未订阅Steam所以不会发出来')
                 return '，'.join(replys)
             except Exception as e:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'查询战报失败', e)
+                logger.warning(f'查询战报失败 {e}')
                 return usage
 
         prm = re.match('查询(.+)的最近比赛$', msg)
@@ -384,7 +386,7 @@ class Steam:
                 return '唔得，一个一个查'
             await self.api.send_group_msg(
                 group_id=message['group_id'],
-                message=f'正在查询',
+                message='正在查询',
             )
             steamdata = loadjson(STEAM)
             obj = self.whois.object_explainer(group, user, name)
@@ -471,11 +473,11 @@ class Steam:
         if not sids:
             sids = '0'
         now = int(datetime.now().timestamp())
-        # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'Steam雷达开始扫描')
+        # logger.info('Steam雷达开始扫描')
         try:
             j = requests.get(PLAYER_SUMMARY.format(APIKEY, sids), timeout=10).json()
         except requests.exceptions.RequestException as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale PLAYER_SUMMARY', e)
+            logger.warning(f'kale PLAYER_SUMMARY {e}')
             j = {'response': {'players': []}}
         for p in j['response']['players']:
             id64 = int(p['steamid'])
@@ -514,7 +516,7 @@ class Steam:
             # DOTA2最近比赛更新
             # 每分钟请求时只请求最近3小时内有DOTA2活动的玩家的最近比赛，其余玩家的比赛仅每小时请求一次
             if steamdata['players'][id3]['last_DOTA2_action'] >= now - 10800 or datetime.now().minute == self.MINUTE:
-                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '请求最近比赛更新', id64)
+                # logger.info(f'请求最近比赛更新 {id64}')
                 match_id, start_time = self.dota2.get_last_match(id64)
             else:
                 match_id, start_time = (0, 0) # 将跳过之后的步骤
@@ -578,11 +580,7 @@ class Steam:
                 del news_details[k]
 
         if len(news) > 0:
-            print(
-                datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
-                f'Steam雷达扫描到了{len(news)}个新事件',
-                str(news_details)
-            )
+            logger.info('Steam雷达扫描到了{}个新事件 {}'.format(len(news), str(news_details)))
 
         for msg in news:
             if msg.get('target_groups', 0) == 0:
@@ -595,7 +593,7 @@ class Steam:
         return news
 
     def clear_matches(self):
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理本地保存的比赛分析数据和战报图片')
+        logger.info('清理本地保存的比赛分析数据和战报图片')
         try:
             size = 0
             cnt = len(os.listdir(DOTA2_MATCHES))
@@ -607,22 +605,22 @@ class Steam:
                 for f in os.listdir(self.YOBOT_OUTPUT):
                     size += os.path.getsize(os.path.join(self.YOBOT_OUTPUT, f))
                     os.remove(os.path.join(self.YOBOT_OUTPUT, f))
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理完成，删除了{}个文件，size={}'.format(cnt, size))
+            logger.info('清理完成，删除了{}个文件，size={}'.format(cnt, size))
         except Exception as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '清理失败', e)
+            logger.warning(f'清理失败 {e}')
 
     def init_fonts(self):
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化字体')
+        logger.info('初始化字体')
         font_path = os.path.expanduser('~/.Steam_watcher/fonts/MSYH.TTC')
         font_OK = False
         try:
             font = ImageFont.truetype(font_path, 12)
             font_OK = True
             if os.path.getsize(font_path) < 19647736:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体文件不完整')
+                logger.warning('字体文件不完整')
                 font_OK = False
         except Exception as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'初始化字体失败', e)
+            logger.warning(f'初始化字体失败 {e}')
         if font_OK:
             return
         try:
@@ -632,37 +630,38 @@ class Steam:
                     n = f'{i:0>3}'
                     per = i / 192 * 100
                     t1 = (time.time() - t0) / i * (192 - i)
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'正在重新下载字体({per:.2f}%)，预计还需要{t1:.2f}秒', end='\r')
+                    # logger.info(f'正在重新下载字体({per:.2f}%)，预计还需要{t1:.2f}秒')
+                    print(f'正在重新下载字体({per:.2f}%)，预计还需要{t1:.2f}秒', end='\r')
                     f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/MSYH/x{n}', timeout=10).content)
-            print()
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体下载完成')
+            logger.info('字体下载完成')
         except Exception as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '字体下载失败', e)
+            logger.warning(f'字体下载失败 {e}')
 
     def init_images(self):
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化图片')
+        logger.info('初始化图片')
         total, downloaded, successful, failed = 0, 0, 0, 0
         images = []
         try:
             images = requests.get('https://yubo65536.gitee.io/manager/assets/DOTA2_images.list', timeout=10).text.split('\n')
             total = len(images)
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'加载图片列表成功，共有{total}条图片记录')
+            logger.info(f'加载图片列表成功，共有{total}条图片记录')
         except Exception as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '加载图片列表失败', e)
+            logger.warning(f'加载图片列表失败 {e}')
             return
         if not images:
             return
         for img in images:
             img_OK = False
             img_path = os.path.join(IMAGES, img)
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '初始化图片({}/{})'.format(downloaded + successful + failed + 1, total), end='\r')
+            # logger.info('初始化图片({}/{})'.format(downloaded + successful + failed + 1, total))
+            print('初始化图片({}/{})'.format(downloaded + successful + failed + 1, total), end='\r')
             try:
                 cur_img = Image.open(img_path).verify()
                 img_OK = True
                 successful += 1
             except Exception as e:
-                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'读取图片{img}失败', e)
-                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'开始重新下载{img}')
+                # logger.warning(f'读取图片{img}失败 {e}')
+                # logger.info(f'开始重新下载{img}')
                 pass
             if img_OK:
                 continue
@@ -671,10 +670,9 @@ class Steam:
                     f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/images/{img}', timeout=10).content)
                     downloaded += 1
             except Exception as e:
-                # print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'下载{img}失败', e)
+                # logger.info(f'下载{img}失败 {e}')
                 failed += 1
-        print()
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), f'从本地读取{successful}，重新下载{downloaded}，读取/下载失败{failed}')
+        logger.info(f'从本地读取{successful}，重新下载{downloaded}，读取/下载失败{failed}')
 
     def get_players(self):
         steamdata  = loadjson(STEAM)
@@ -698,7 +696,7 @@ class Dota2:
             match = requests.get(LAST_MATCH.format(APIKEY, id64), timeout=10).json()['result']['matches'][0]
             return match['match_id'], match['start_time']
         except requests.exceptions.RequestException as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale LAST_MATCH', e)
+            logger.warning(f'kale LAST_MATCH {e}')
             return 0, 0
         except Exception as e:
             return 0, 0
@@ -711,7 +709,7 @@ class Dota2:
             rank = j.get('rank_tier') if j.get('rank_tier') else 0
             return name, rank
         except requests.exceptions.RequestException as e:
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_PLAYERS', e)
+            logger.warning(f'kale OPENDOTA_PLAYERS {e}')
             return '', 0
         except Exception as e:
             return '', 0
@@ -724,34 +722,34 @@ class Dota2:
     def get_match(self, match_id):
         MATCH = os.path.join(DOTA2_MATCHES, f'{match_id}.json')
         if os.path.exists(MATCH):
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 读取本地保存的分析结果'.format(match_id))
+            logger.info('比赛编号 {} 读取本地保存的分析结果'.format(match_id))
             return loadjson(MATCH)
         steamdata = loadjson(STEAM)
         try:
             try:
                 match = requests.get(OPENDOTA_MATCHES.format(match_id), timeout=10).json()
             except requests.exceptions.RequestException as e:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_MATCHES', e)
+                logger.warning(f'kale OPENDOTA_MATCHES {e}')
                 raise
             if steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] >= MAX_ATTEMPTS:
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
+                logger.warning('比赛编号 {} 重试次数过多，跳过分析'.format(match_id))
                 match = {}
             if not match.get('players'):
                 if match.get('error'):
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'OPENDOTA 返回错误信息', match['error'])
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
+                    logger.warning('OPENDOTA 返回错误信息 {}'.format(match['error']))
+                logger.info('比赛编号 {} 从OPENDOTA获取不到分析结果，使用Valve的API'.format(match_id))
                 try:
                     match = requests.get(MATCH_DETAILS.format(APIKEY, match_id), timeout=10).json()['result']
                     match['from_valve'] = True
                 except requests.exceptions.RequestException as e:
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale MATCH_DETAILS', e)
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '从Valve的API获取比赛结果失败', e)
+                    logger.warning(f'kale MATCH_DETAILS {e}')
+                    logger.warning(f'从Valve的API获取比赛结果失败 {e}')
                     raise
             if not match.get('game_mode'):
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛分析结果不完整')
+                logger.warning('比赛分析结果不完整')
             if match['game_mode'] in (15, 19):
                 # 活动模式
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 活动模式，跳过分析'.format(match_id))
+                logger.info('比赛编号 {} 活动模式，跳过分析'.format(match_id))
                 match = {'error': '活动模式，跳过分析'}
                 dumpjson(match, MATCH)
                 return match
@@ -759,7 +757,7 @@ class Dota2:
         except Exception as e:
             steamdata['DOTA2_matches_pool'][match_id]['request_attempts'] += 1
             attempts = '（第{}次）'.format(steamdata['DOTA2_matches_pool'][match_id]['request_attempts'])
-            print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), match_id, attempts, e)
+            logger.info('{} {} {}'.format(match_id, attempts, e))
             dumpjson(steamdata, STEAM)
             return {}
         if received is None and not match.get('from_valve'):
@@ -770,11 +768,11 @@ class Dota2:
                 try:
                     j = requests.get(OPENDOTA_REQUEST.format(job_id), timeout=10).json()
                 except requests.exceptions.RequestException as e:
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_REQUEST', e)
+                    logger.warning(f'kale OPENDOTA_REQUEST {e}')
                     return {}
                 if j:
                     # 查询返回了数据，说明job仍未完成
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'job_id {} 仍在处理中'.format(job_id))
+                    logger.info('job_id {} 仍在处理中'.format(job_id))
                     return {}
                 else:
                     # job完成了，可以删掉
@@ -788,26 +786,23 @@ class Dota2:
                 try:
                     j = requests.post(OPENDOTA_REQUEST.format(match_id), timeout=10).json()
                 except requests.exceptions.RequestException as e:
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), 'kale OPENDOTA_REQUEST', e)
+                    logger.warning('kale OPENDOTA_REQUEST {e}')
                     return {}
                 job_id = j['job'].get('jobId', -1)
                 if job_id == -1:
-                    print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 请求job_id失败'.format(match_id))
+                    logger.warning('比赛编号 {} 请求job_id失败'.format(match_id))
                 else:
-                    print(
-                        datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
-                        '比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(match_id, attempts, job_id)
-                    )
+                    logger.info('比赛编号 {} 请求OPENDOTA分析{}，job_id: {}'.format(match_id, attempts, job_id))
                     steamdata['DOTA2_matches_pool'][match_id]['job_id'] = job_id
                 dumpjson(steamdata, STEAM)
                 return {}
         else:
             if match.get('from_valve'):
                 # 比赛结果来自Valve的API
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从Valve的API获取到分析结果'.format(match_id))
+                logger.info('比赛编号 {} 从Valve的API获取到分析结果'.format(match_id))
             else:
                 # 比赛分析结果完整了
-                print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 从OPENDOTA获取到分析结果'.format(match_id))
+                logger.info('比赛编号 {} 从OPENDOTA获取到分析结果'.format(match_id))
             for pp in steamdata['DOTA2_matches_pool'][match_id]['players']:
                 for pm in match['players']:
                     if pp['steam_id3'] == pm['account_id']:
@@ -820,7 +815,7 @@ class Dota2:
         try:
             return Image.open(os.path.join(IMAGES, img_path))
         except Exception as e:
-            print(e)
+            logger.warning(f'{e}')
             return Image.new('RGBA', (30, 30), (255, 160, 160))
 
     def init_player(self, player):
@@ -1327,7 +1322,7 @@ class Dota2:
         else:
             image.save(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'png')
 
-        print(datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), '比赛编号 {} 生成战报图片'.format(match_id))
+        logger.info('比赛编号 {} 生成战报图片'.format(match_id))
 
     def get_matches_report(self):
         steamdata = loadjson(STEAM)
@@ -1338,10 +1333,7 @@ class Dota2:
                 match = self.get_match(match_id)
                 if match:
                     if match.get('error'):
-                        print(
-                            datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
-                            '比赛编号 {} 在分析结果中发现错误 {}'.format(match_id, match['error'])
-                        )
+                        logger.warning('比赛编号 {} 在分析结果中发现错误 {}'.format(match_id, match['error']))
                         m = '[CQ:at,qq={}] 你点的比赛战报来不了了！'.format(match_info['is_solo']['user'])
                         m += '\n在分析结果中发现错误 {}'.format(match['error'])
                     else:
@@ -1370,10 +1362,7 @@ class Dota2:
                 match = self.get_match(match_id)
                 if match:
                     if match.get('error'):
-                        print(
-                            datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
-                            '比赛编号 {} 在分析结果中发现错误 {}'.format(match_id, match['error'])
-                        )
+                        logger.warning('比赛编号 {} 在分析结果中发现错误 {}'.format(match_id, match['error']))
                     else:
                         m = self.generate_match_message(match_id)
                         if isinstance(m, str):

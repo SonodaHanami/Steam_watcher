@@ -1,6 +1,6 @@
 import os
 import json
-
+import logging
 
 def loadjson(jsonfile, default={}):
     try:
@@ -20,3 +20,17 @@ def load_config():
 def mkdir_if_not_exists(path):
     if not os.path.exists(path):
         os.mkdir(path)
+
+def init_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    if logger.hasHandlers():
+        logger.handlers.clear()
+    sh = logging.StreamHandler()
+    formatter = logging.Formatter(fmt='[%(asctime)s] %(message)s')
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    return logger
+
+def get_logger(name):
+    return logging.getLogger(name)

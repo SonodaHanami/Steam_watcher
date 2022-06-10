@@ -34,4 +34,6 @@ mkdir_if_not_exists(os.path.expanduser('~/.Steam_watcher/fonts'))
 mkdir_if_not_exists(os.path.expanduser('~/.Steam_watcher/images'))
 mkdir_if_not_exists(os.path.expanduser('~/.Steam_watcher/DOTA2_matches/'))
 
+init_logger('Steam_watcher')
+
 from .steam import Steam
