@@ -786,7 +786,7 @@ class Dota2:
                 try:
                     j = requests.post(OPENDOTA_REQUEST.format(match_id), timeout=10).json()
                 except requests.exceptions.RequestException as e:
-                    logger.warning('kale OPENDOTA_REQUEST {e}')
+                    logger.warning(f'kale OPENDOTA_REQUEST {e}')
                     return {}
                 job_id = j['job'].get('jobId', -1)
                 if job_id == -1:
@@ -815,7 +815,7 @@ class Dota2:
         try:
             return Image.open(os.path.join(IMAGES, img_path))
         except Exception as e:
-            logger.warning(f'{e}')
+            logger.warning(e)
             return Image.new('RGBA', (30, 30), (255, 160, 160))
 
     def init_player(self, player):
