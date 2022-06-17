@@ -973,6 +973,7 @@ class Dota2:
         return '\n'.join(tosend)
 
     def generate_match_image(self, match_id):
+        t0 = time.time()
         match = self.get_match(match_id)
         if not match:
             return None
@@ -1322,7 +1323,7 @@ class Dota2:
         else:
             image.save(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'png')
 
-        logger.info('比赛编号 {} 生成战报图片'.format(match_id))
+        logger.info('比赛编号 {} 生成战报图片，耗时{:.3f}s'.format(match_id, time.time() - t0))
 
     def get_match_reports(self):
         steamdata = loadjson(STEAM)
