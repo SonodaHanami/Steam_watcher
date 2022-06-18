@@ -434,40 +434,27 @@ class Steam:
 
     def jobs(self):
         trigger = CronTrigger(minute='*', second='30')
-        job = (trigger, self.send_news_async)
+        get_news = (trigger, self.get_news_async)
         trigger = CronTrigger(hour='5')
-        clear = (trigger, self.clear_matches)
-        return (job, clear)
-
-    async def send_news_async(self):
-        steamdata = loadjson(STEAM)
-        groups = steamdata.get('subscribe_groups')
-        if not groups:
-            return None
-        news = await self.get_news_async()
-        sends = []
-        for msg in news:
-            for g in groups:
-                if str(g) in msg['target_groups']:
-                    sends.append({
-                        'message_type': 'group',
-                        'group_id': g,
-                        'message': msg['message']
-                    })
-        return sends
+        clear_matches = (trigger, self.clear_matches)
+        return (get_news, clear_matches)
 
     async def get_news_async(self):
         '''
         返回最新消息
         '''
+        steamdata = loadjson(STEAM)
+        memberdata = loadjson(MEMBER)
+        groups = steamdata.get('subscribe_groups')
+        if not groups:
+            return None
+
         news = []
         news_details = {
             'steam_status': 0,
             'dota2_rank':   0,
             'match_report': 0,
         }
-        memberdata = loadjson(MEMBER)
-        steamdata = loadjson(STEAM)
         players = self.get_players()
         sids = ','.join(str(p) for p in players.keys())
         if not sids:
@@ -582,6 +569,7 @@ class Steam:
         if len(news) > 0:
             logger.info('Steam雷达扫描到了{}个新事件 {}'.format(len(news), str(news_details)))
 
+        to_sends = []
         for msg in news:
             if msg.get('target_groups', 0) == 0:
                 msg['target_groups'] = []
@@ -589,8 +577,14 @@ class Steam:
                 for g in memberdata:
                     if u in memberdata[g] and g not in msg['target_groups']:
                         msg['target_groups'].append(g)
-
-        return news
+            for g in groups:
+                if str(g) in msg['target_groups']:
+                    to_sends.append({
+                        'message_type': 'group',
+                        'group_id': g,
+                        'message': msg['message']
+                    })
+        return to_sends
 
     def clear_matches(self):
         logger.info('清理本地保存的比赛分析数据和战报图片')
