@@ -398,6 +398,9 @@ class Steam:
                 return f'查不了，{name}可能还没有绑定SteamID'
             match_id, start_time = self.dota2.get_last_match(id3)
             if match_id and start_time:
+                if match_id > steamdata['players'][id3]['last_DOTA2_match_id']:
+                    # steamdata['players'][id3]['last_DOTA2_match_id'] = match_id
+                    return random.choice(['别急好吗', '我知道你很急，但是你先别急'])
                 replys = []
                 match_id = str(match_id)
                 replys.append('查到了')
