@@ -23,6 +23,7 @@ def mkdir_if_not_exists(path):
 
 def init_logger(name):
     logger = logging.getLogger(name)
+    logger.propagate = False
     logger.setLevel(logging.INFO)
     if logger.hasHandlers():
         logger.handlers.clear()
