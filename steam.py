@@ -1027,6 +1027,8 @@ class Dota2:
         image.paste(self.get_image('radiant_logo.png').resize((32, 32), Image.ANTIALIAS), (10, 125))
         image.paste(self.get_image('dire_logo.png').resize((32, 32), Image.ANTIALIAS), (10, 510))
         draw.text((100, 128 + 385 * winner), '胜利', font=font2, fill=[RADIANT_GREEN, DIRE_RED][winner])
+        # 建筑总血量     基地   4塔        雕像       近战兵营   远程兵营   3塔        2塔        1塔
+        total_tower_hp = 4500 + 2600 * 2 + 1000 * 7 + 2200 * 3 + 1300 * 3 + 2500 * 3 + 2500 * 3 + 1800 * 3
         max_net = [0, 0]
         max_xpm = [0, 0]
         max_kills = [0, 0, 0]
@@ -1107,8 +1109,8 @@ class Dota2:
                 draw.text((123, 196 + slot * 60 + idx * 65), net, font=font, fill=(0, 0, 0))
                 draw.text((122, 195 + slot * 60 + idx * 65), net, font=font, fill=(255, 255, 0))
                 draw.text((126 + net_size[0], 195 + slot * 60 + idx * 65), damage_to_net, font=font, fill=(0, 0, 0))
-
-                draw.text((215, 209 + slot * 60 + idx * 65), '建筑伤害: {:,}'.format(p['tower_damage']), font=font, fill=(0, 0, 0))
+                tower_damage_rate = 0 if p['tower_damage'] == 0 else (100 * p['tower_damage'] / total_tower_hp)
+                draw.text((215, 209 + slot * 60 + idx * 65), '建筑伤害: {:,} ({:.2f}%)'.format(p['tower_damage'], tower_damage_rate), font=font, fill=(0, 0, 0))
                 kda = '{}/{}/{} ({:.2f})'.format(
                     p['kills'], p['deaths'], p['assists'],
                     (p['kills'] + p['assists']) if p['deaths'] == 0 else (p['kills'] + p['assists']) / p['deaths']
