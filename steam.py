@@ -1338,7 +1338,7 @@ class Dota2:
                         self.generate_match_image(match_id)
                         m = '[CQ:at,qq={}] 你点的比赛战报来了！'.format(match_info['is_solo']['user'])
                         if self.IMAGE_MODE == 'YOBOT_OUTPUT':
-                            m += '\n[CQ:image,file={}]'.format(self.IMAGE_URL.format(match_id))
+                            m += '\n[CQ:image,file={},cache=0]'.format(self.IMAGE_URL.format(match_id))
                         elif self.IMAGE_MODE == 'BASE64_IMAGE':
                             decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
                             m += '\n[CQ:image,file=base64://{}]'.format(decoded)
@@ -1366,7 +1366,7 @@ class Dota2:
                         if isinstance(m, str):
                             self.generate_match_image(match_id)
                             if self.IMAGE_MODE == 'YOBOT_OUTPUT':
-                                m += '\n[CQ:image,file={}]'.format(self.IMAGE_URL.format(match_id))
+                                m += '\n[CQ:image,file={},cache=0]'.format(self.IMAGE_URL.format(match_id))
                             elif self.IMAGE_MODE == 'BASE64_IMAGE':
                                 decoded = base64.b64encode(open(os.path.join(DOTA2_MATCHES, f'{match_id}.png'), 'rb').read()).decode()
                                 m += '\n[CQ:image,file=base64://{}]'.format(decoded)
