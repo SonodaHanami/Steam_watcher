@@ -44,18 +44,14 @@ class Whois:
 
 
         if msg == '查询群友':
-            data = loadjson(MEMBER)
-            if group in data and len(data[group]):
-                return '本群群友有{}'.format("，".join([data[group][p][0] for p in data[group].keys()]))
-            else:
-                return "没有查询到本群群友"
+            return self.get_group_member(group)
 
         if re.search('是不是', msg):
             prm = re.search('(.+)是不是(.+)[?？]', msg)
             if prm and prm[1] and prm[2]:
                 return self.alias_equals(group, user, prm[1], prm[2])
 
-        if atbot and (msg == '是谁?' or msg == '是谁？'):
+        if atbot and (msg == '是谁？' or msg == '是谁?'):
             return self.whois(group, user, ATBOT)
         if not atbot and re.match('.*是谁[\?？]', msg):
             try:
@@ -80,6 +76,7 @@ class Whois:
 
 
     def whois(self, group, user, obj):
+        self._update()
         object = self.object_explainer(group, user, obj)
         name = object['name']
         uid  = object['uid']
@@ -93,7 +90,7 @@ class Whois:
             try:
                 names = data[group][user]
             except:
-                return '我不认识'
+                return f'我不认识{name}'
             return f'你是{"，".join(names)}！'
         if not obj:
             return IDK
@@ -109,6 +106,7 @@ class Whois:
 
 
     def alias_equals(self, group, user, obj1, obj2):
+        self._update()
         data = loadjson(MEMBER)
         if not obj1 or not obj2:
             return '啥？'
@@ -150,6 +148,7 @@ class Whois:
     def add_alias(self, group, user, subject, object):
         if not object:
             return '是啥？'
+        self._update()
         data = loadjson(MEMBER)
         sbj = self.object_explainer(group, user, subject)
         ''' 如果默认名字存在，则obj是object对应的默认名字 '''
@@ -193,6 +192,7 @@ class Whois:
 
 
     def set_default_alias(self, group, user, name):
+        self._update()
         if self.add_alias(group, user, '我', name) == '不准套娃':
             return '不准套娃'
         data = loadjson(MEMBER)
@@ -205,6 +205,7 @@ class Whois:
 
 
     def del_alias(self, group, user, name):
+        self._update()
         data = loadjson(MEMBER)
         if group not in data:
             return None
@@ -225,6 +226,7 @@ class Whois:
 
 
     def del_all_alias(self, group, user):
+        self._update()
         data = loadjson(MEMBER)
         if group not in data:
             return None
@@ -241,18 +243,8 @@ class Whois:
             return f'好，你不再是{"，".join(to_del)}了'
 
 
-    def _update(self):
-        data = loadjson(MEMBER)
-        self._rosters = {}
-        for group in data:
-            self._rosters[group] = pygtrie.CharTrie()
-            for user in data[group]:
-                for name in data[group][user]:
-                    if name.lower() not in self._rosters[group]:
-                        self._rosters[group][name.lower()] = user
-
-
     def get_uid(self, group, obj):
+        self._update()
         ''' 如果obj是at，返回obj中的uid '''
         try:
             uid = re.match('\[CQ:at,qq=(\d+)\]', obj.strip())[1]
@@ -276,6 +268,7 @@ class Whois:
         输入为用户视角：“我”是用户，“你”是BOT
         输出为BOT视角 ：“我”是BOT，“你”是用户
         '''
+        self._update()
         obj = obj.strip()
         data = loadjson(MEMBER)
         if obj == '我':
@@ -293,3 +286,22 @@ class Whois:
             except:
                 name = UNKNOWN
         return {'uid': uid, 'name': name}
+
+
+    def get_group_member(self, group):
+        data = loadjson(MEMBER)
+        if group in data and len(data[group]):
+            return '本群群友有{}'.format("，".join([data[group][p][0] for p in data[group].keys()]))
+        else:
+            return "没有查询到本群群友"
+
+
+    def _update(self):
+        data = loadjson(MEMBER)
+        self._rosters = {}
+        for group in data:
+            self._rosters[group] = pygtrie.CharTrie()
+            for user in data[group]:
+                for name in data[group][user]:
+                    if name.lower() not in self._rosters[group]:
+                        self._rosters[group][name.lower()] = user
