@@ -30,6 +30,8 @@ STEAM  = os.path.expanduser('~/.Steam_watcher/steam.json')
 IMAGES = os.path.expanduser('~/.Steam_watcher/images/')
 DOTA2_MATCHES = os.path.expanduser('~/.Steam_watcher/DOTA2_matches/')
 
+IMAGE_URL = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/{}/{}.png'
+
 PLAYER_SUMMARY = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids={}'
 LAST_MATCH = 'https://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v001/?key={}&account_id={}&matches_requested=1'
 MATCH_DETAILS = 'https://api.steampowered.com/IDOTA2Match_570/GetMatchDetails/V001/?key={}&match_id={}'
@@ -641,38 +643,33 @@ class Steam:
 
     def init_images(self):
         logger.info('初始化图片')
-        total, downloaded, successful, failed = 0, 0, 0, 0
         images = []
-        try:
-            images = requests.get('https://yubo65536.gitee.io/manager/assets/DOTA2_images.list', timeout=10).text.split('\n')
-            total = len(images)
-            logger.info(f'加载图片列表成功，共有{total}条图片记录')
-        except Exception as e:
-            logger.warning(f'加载图片列表失败 {e}')
-            return
-        if not images:
-            return
+        for hero in HEROES.values():
+            images.append(f'hero_{hero}.png')
+        for item in ITEMS.values():
+            images.append(f'item_{item}.png')
+        logger.info('从配置文件中读取到{}名英雄和{}个物品，尝试读取/下载对应的图片'.format(len(HEROES), len(ITEMS)))
+        total = len(images)
+        downloaded, successful, failed = 0, 0, 0
         for img in images:
-            img_OK = False
             img_path = os.path.join(IMAGES, img)
-            # logger.info('初始化图片({}/{})'.format(downloaded + successful + failed + 1, total))
+            if img.startswith('item_recipe'):
+                img_path = os.path.join(IMAGES, 'item_recipe.png')
             print('初始化图片({}/{})'.format(downloaded + successful + failed + 1, total), end='\r')
             try:
                 cur_img = Image.open(img_path).verify()
-                img_OK = True
                 successful += 1
-            except Exception as e:
-                # logger.warning(f'读取图片{img}失败 {e}')
-                # logger.info(f'开始重新下载{img}')
-                pass
-            if img_OK:
                 continue
+            except Exception as e:
+                pass
             try:
                 with open(img_path, 'wb') as f:
-                    f.write(requests.get(f'https://yubo65536.gitee.io/manager/assets/images/{img}', timeout=10).content)
+                    if img.startswith('hero'):
+                        f.write(requests.get(IMAGE_URL.format('heroes', img[5:-4]), timeout=10).content)
+                    if img.startswith('item'):
+                        f.write(requests.get(IMAGE_URL.format('items', img[5:-4]), timeout=10).content)
                     downloaded += 1
             except Exception as e:
-                # logger.info(f'下载{img}失败 {e}')
                 failed += 1
         logger.info(f'从本地读取{successful}，重新下载{downloaded}，读取/下载失败{failed}')
 
@@ -748,11 +745,12 @@ class Dota2:
                     logger.warning(f'从Valve的API获取比赛结果失败 {e}')
                     raise
             if not match.get('game_mode'):
-                logger.warning('比赛分析结果不完整')
-            if match['game_mode'] in (15, 19):
+                logger.warning('比赛编号 {} 无效，game_mode {}'.format(match_id, match.get('game_mode')))
+            if match.get('game_mode') in (15, 19):
                 # 活动模式
                 logger.info('比赛编号 {} 活动模式，跳过分析'.format(match_id))
                 match = {'error': '活动模式，跳过分析'}
+            if match.get('error'):
                 dumpjson(match, MATCH)
                 return match
             received = match['players'][0].get('damage_inflictor_received', None)
@@ -1070,7 +1068,7 @@ class Dota2:
                 team_deaths += p['deaths']
                 team_gold += p['net_worth']
                 team_exp += p['total_xp']
-                hero_img = self.get_image('{}_full.png'.format(HEROES.get(p['hero_id'])))
+                hero_img = self.get_image('hero_{}.png'.format(HEROES.get(p['hero_id'])))
                 hero_img = hero_img.resize((64, 36), Image.ANTIALIAS)
                 image.paste(hero_img, (10, 170 + slot * 60 + idx * 65))
                 draw.rectangle((54, 191 + slot * 60 + idx * 65, 73, 205 + slot * 60 + idx * 65), fill=(50, 50, 50))
@@ -1169,7 +1167,10 @@ class Dota2:
                     if p[item] == 0:
                         item_img = Image.new('RGB', (40, 30), (128, 128, 128))
                     else:
-                        item_img = self.get_image('{}_lg.png'.format(ITEMS.get(p[item])))
+                        if ITEMS.get(p[item], '').startswith('recipe'):
+                            item_img = self.get_image('item_recipe.png')
+                        else:
+                            item_img = self.get_image('item_{}.png'.format(ITEMS.get(p[item])))
                     if p[item] == 108:
                         scepter = 1
                     if item == 'item_neutral':
