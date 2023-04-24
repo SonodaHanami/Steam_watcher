@@ -55,7 +55,7 @@ class Steam:
         self.setting = kwargs['glo_setting']
         self.api = kwargs['bot_api']
         self.whois = whois.Whois(**kwargs)
-        self.MINUTE = random.randint(0, 59)
+        self.MINUTE = (datetime.now() + timedelta(minutes=2)).minute
         self.nowork = 0
         self.nosleep = 0
 
@@ -399,8 +399,13 @@ class Steam:
             match_id, start_time = self.dota2.get_last_match(id3)
             if match_id and start_time:
                 if match_id > steamdata['players'][id3]['last_DOTA2_match_id']:
-                    # steamdata['players'][id3]['last_DOTA2_match_id'] = match_id
-                    return random.choice(['别急好吗', '我知道你很急，但是你先别急'])
+                    if datetime.now().timestamp() - steamdata['players'][id3]['last_DOTA2_action'] < 3600:
+                        return '{}\n{}'.format(
+                            random.choice(['别急好吗', '我知道你很急，但是你先别急']),
+                            '你{}秒前还在玩Dota2，Steam雷达扫描到了比赛就会发'
+                        )
+                    steamdata['players'][id3]['last_DOTA2_match_id'] = match_id
+                    steamdata['players'][id3]['last_DOTA2_action'] = start_time
                 replys = []
                 match_id = str(match_id)
                 replys.append('查到了')
@@ -436,7 +441,7 @@ class Steam:
 
 
     def jobs(self):
-        trigger = CronTrigger(minute='*', second='30')
+        trigger = CronTrigger(minute='*')
         get_news = (trigger, self.get_news_async)
         trigger = CronTrigger(hour='5')
         clear_matches = (trigger, self.clear_matches)
