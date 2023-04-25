@@ -872,6 +872,31 @@ PLAYER_RANK = {
 
 SKILL_LEVEL = {1: 'Normal', 2: 'High', 3: 'Very High'}
 
+OTHER_IMAGES = [
+    'hero_None',
+    'item_None',
+    'logo_dire',
+    'logo_radiant',
+    'rank_icon_0',
+    'rank_icon_1',
+    'rank_icon_2',
+    'rank_icon_3',
+    'rank_icon_4',
+    'rank_icon_5',
+    'rank_icon_6',
+    'rank_icon_7',
+    'rank_icon_8',
+    'rank_star_1',
+    'rank_star_2',
+    'rank_star_3',
+    'rank_star_4',
+    'rank_star_5',
+    'scepter_0',
+    'scepter_1',
+    'shard_0',
+    'shard_1',
+]
+
 WIN_NEGATIVE = [
     '{}侥幸赢得了比赛',
     '{}走狗屎运赢得了比赛',

@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from urllib.parse import urljoin
 
 from . import whois
-from .DOTA2_dicts import *
+from .dota2_dicts import *
 from .utils import *
 
 logger = get_logger('Steam_watcher')
@@ -31,6 +31,7 @@ IMAGES = os.path.expanduser('~/.Steam_watcher/images/')
 DOTA2_MATCHES = os.path.expanduser('~/.Steam_watcher/DOTA2_matches/')
 
 IMAGE_URL = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/{}/{}.png'
+OTHER_IMAGE_URL = 'https://raw.githubusercontent.com/SonodaHanami/Steam_watcher/web/images/{}.png'
 
 PLAYER_SUMMARY = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids={}'
 LAST_MATCH = 'https://api.steampowered.com/IDOTA2Match_570/GetMatchHistory/v001/?key={}&account_id={}&matches_requested=1'
@@ -648,13 +649,20 @@ class Steam:
             images.append(f'hero_{hero}.png')
         for item in ITEMS.values():
             images.append(f'item_{item}.png')
-        logger.info('从配置文件中读取到{}名英雄和{}个物品，尝试读取/下载对应的图片'.format(len(HEROES), len(ITEMS)))
+        for img in OTHER_IMAGES:
+            images.append(f'other_{img}.png')
+        logger.info('从配置文件中读取到{}名英雄、{}个物品和{}张其他图片，尝试读取/下载对应的图片'.format(
+            len(HEROES), len(ITEMS), len(OTHER_IMAGES)
+        ))
         total = len(images)
         downloaded, successful, failed = 0, 0, 0
         for img in images:
-            img_path = os.path.join(IMAGES, img)
             if img.startswith('item_recipe'):
                 img_path = os.path.join(IMAGES, 'item_recipe.png')
+            elif img.startswith('other'):
+                img_path = os.path.join(IMAGES, img[6:])
+            else:
+                img_path = os.path.join(IMAGES, img)
             print('初始化图片({}/{})'.format(downloaded + successful + failed + 1, total), end='\r')
             try:
                 cur_img = Image.open(img_path).verify()
@@ -666,11 +674,13 @@ class Steam:
                 with open(img_path, 'wb') as f:
                     if img.startswith('hero'):
                         img_url = IMAGE_URL.format('heroes', img[5:-4])
-                    if img.startswith('item'):
+                    elif img.startswith('item'):
                         if img.startswith('item_recipe'):
                             img_url = IMAGE_URL.format('items', 'recipe')
                         else:
                             img_url = IMAGE_URL.format('items', img[5:-4])
+                    elif img.startswith('other'):
+                        img_url = OTHER_IMAGE_URL.format(img[6:-4])
                     f.write(requests.get(img_url, timeout=10).content)
                     downloaded += 1
             except Exception as e:
@@ -1031,8 +1041,8 @@ class Dota2:
         draw.text((461, 81), str(match['dire_score']), font=font2, fill=DIRE_RED)
         draw.rectangle((0, 120, 800, 122), RADIANT_GREEN)
         draw.rectangle((0, 505, 800, 507), DIRE_RED)
-        image.paste(self.get_image('radiant_logo.png').resize((32, 32), Image.ANTIALIAS), (10, 125))
-        image.paste(self.get_image('dire_logo.png').resize((32, 32), Image.ANTIALIAS), (10, 510))
+        image.paste(self.get_image('logo_radiant.png').resize((32, 32), Image.ANTIALIAS), (10, 125))
+        image.paste(self.get_image('logo_dire.png').resize((32, 32), Image.ANTIALIAS), (10, 510))
         draw.text((100, 128 + 385 * winner), '胜利', font=font2, fill=[RADIANT_GREEN, DIRE_RED][winner])
         # 建筑总血量     基地   4塔        雕像       近战兵营   远程兵营   3塔        2塔        1塔
         total_tower_hp = 4500 + 2600 * 2 + 1000 * 7 + 2200 * 3 + 1300 * 3 + 2500 * 3 + 2500 * 3 + 1800 * 3
