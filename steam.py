@@ -56,7 +56,7 @@ class Steam:
 
         self.setting = kwargs['glo_setting']
         self.api = kwargs['bot_api']
-        self.whois = whois.Whois(**kwargs)
+        self.whois = kwargs.get('whois') or whois.Whois(**kwargs)
         self.MINUTE = (datetime.now() + timedelta(minutes=2)).minute
         self.nowork = 0
         self.nosleep = 0
@@ -665,9 +665,13 @@ class Steam:
             try:
                 with open(img_path, 'wb') as f:
                     if img.startswith('hero'):
-                        f.write(requests.get(IMAGE_URL.format('heroes', img[5:-4]), timeout=10).content)
+                        img_url = IMAGE_URL.format('heroes', img[5:-4])
                     if img.startswith('item'):
-                        f.write(requests.get(IMAGE_URL.format('items', img[5:-4]), timeout=10).content)
+                        if img.startswith('item_recipe'):
+                            img_url = IMAGE_URL.format('items', 'recipe')
+                        else:
+                            img_url = IMAGE_URL.format('items', img[5:-4])
+                    f.write(requests.get(img_url, timeout=10).content)
                     downloaded += 1
             except Exception as e:
                 failed += 1
